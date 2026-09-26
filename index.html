@@ -65,6 +65,7 @@ table.list{width:100%;border-collapse:collapse;font-size:.95rem}
 .list th{font-size:.82rem;color:var(--suave);font-weight:700}
 .list td.ra{text-align:right;white-space:nowrap}
 .hin{width:72px}
+.mtab input{width:100%;padding:6px 8px}.mtab .in-nom{min-width:230px}.mtab .in-ali{min-width:100px;max-width:130px}.mtab .in-hor{width:70px}
 .sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:8px}
 .empty{color:var(--suave);padding:8px 0;margin:0}
 .carga{display:flex;flex-direction:column;gap:4px;min-width:190px;font-size:.85rem}
@@ -273,7 +274,7 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
       <button class="btn" id="mCancel" hidden>Cancelar edición</button>
     </div>
   </div>
-  <div class="panel"><h3>Maestros registrados</h3><div id="mList"></div></div>
+  <div class="panel"><h3>Maestros registrados <span id="mCuenta" class="hint"></span></h3><p class="hint" style="margin:-6px 0 10px">Edita el nombre largo, el nombre corto o las horas directo en la tabla; se guarda al salir de la casilla.</p><div id="mList"></div></div>
   <div class="panel">
     <h3>Actualizar desde la lista de personal</h3>
     <p class="hint" style="margin:-6px 0 10px">Pega la lista (un maestro por renglón: nombre corto, nombre largo y horas que trabaja). Se actualizan los que ya existen y se agregan los nuevos, sin borrar su disponibilidad ni su carga.</p>
@@ -636,18 +637,58 @@ function borrarM(id){
   db.ref().update(u).then(() => { toast('Maestro eliminado.'); if (editM===id) resetM(); });
 }
 function renderMaestros(){
+  // No redibujar mientras se escribe en la tabla
+  if (document.activeElement && $('#mList').contains(document.activeElement) && document.activeElement.matches('input')) return;
   const rows = maestrosOrden();
+  $('#mCuenta').textContent = rows.length ? `(${rows.length})` : '';
   if (!rows.length){ $('#mList').innerHTML='<p class="empty">Aún no hay maestros. Agrega el primero con el formulario de arriba.</p>'; return; }
-  let h = '<div class="wrap"><table class="list"><thead><tr><th>Nombre</th><th>Carga semanal</th><th>Turnos</th><th>Horas libres</th><th>No disponible</th><th></th></tr></thead><tbody>';
+  let h = '<div class="wrap"><table class="list mtab"><thead><tr><th>Nombre largo</th><th>Nombre corto</th><th>Horas que trabaja</th><th>Carga semanal</th><th>Turnos</th><th></th></tr></thead><tbody>';
   rows.forEach(([id,m]) => {
     const fg = horasMaestro(id), lib = libresDe(m), tot = fg+lib, c = +m.horasContrato||0;
     const pct = c ? Math.min(100, tot/c*100) : 0, cls = tot>c ? 'bad' : tot===c ? 'ok' : '';
-    h += `<tr><td><b>${esc(m.nombre)}</b> <small class="hint">(${esc(aliasDe(m))})</small>${m.maxDia?`<br><small class="hint">Máx. ${m.maxDia} por día</small>`:''}</td>
+    h += `<tr><td><input class="in-nom" data-id="${id}" data-campo="nombre" value="${esc(m.nombre)}" aria-label="Nombre largo"></td>
+      <td><input class="in-ali" data-id="${id}" data-campo="alias" value="${esc(aliasDe(m))}" aria-label="Nombre corto"></td>
+      <td><input class="in-hor" type="number" min="1" max="60" data-id="${id}" data-campo="horasContrato" value="${c||''}" aria-label="Horas que trabaja"></td>
       <td><div class="carga ${cls}"><div class="bar"><i style="width:${pct}%"></i></div><span>${fg} frente a grupo${lib?` + ${lib} libres`:''} de ${c} h</span></div></td>
-      <td>${turnosDe(m).map(nomTurno).join(' y ')}</td><td>${lib||'No'}</td><td>${Object.keys(m.bloqueos||{}).length} módulos</td>
-      <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
+      <td>${turnosDe(m).map(nomTurno).join(' y ')}${Object.keys(m.bloqueos||{}).length?`<br><small class="hint">${Object.keys(m.bloqueos).length} módulos no disponible</small>`:''}</td>
+      <td class="ra"><button class="btn sm" data-edit="${id}">Disponibilidad</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
   });
   $('#mList').innerHTML = h + '</tbody></table></div>';
+}
+function guardarCampoMaestro(inp){
+  const id = inp.dataset.id, campo = inp.dataset.campo, m = S.maestros[id]; if (!m) return;
+  let v = inp.value.trim();
+  if (campo==='nombre'){
+    if (!v){ inp.value = m.nombre; return toast('El nombre largo no puede quedar vacío.','err'); }
+    if (Object.entries(S.maestros).some(([o,x]) => o!==id && cmp(x.nombre,v)===0)){ inp.value = m.nombre; return toast('Ya existe un maestro con ese nombre.','err'); }
+    v = v.toUpperCase();
+  }
+  if (campo==='alias'){ v = v.toUpperCase(); if (!v){ inp.value = aliasDe(m); return toast('Escribe un nombre corto.','err'); } }
+  if (campo==='horasContrato'){ v = +v; if (!(v>0)){ inp.value = m.horasContrato||''; return toast('Las horas deben ser mayores a cero.','err'); } }
+  if (v === m[campo]) return;
+  db.ref(`${ROOT}/maestros/${id}/${campo}`).set(v).then(() => toast(`${campo==='nombre'?'Nombre largo':campo==='alias'?'Nombre corto':'Horas'} guardado.`));
+}
+
+/* ===================== PLANTILLA DE LA ESCUELA (se carga sola la primera vez) ===================== */
+// [nombre corto, nombre largo, horas que trabaja]
+const PERSONAL_BASE = [["ABRAHAM", "ABRAHAM SOLIS MARTINEZ", 40], ["AMANDA", "AMANDA GARNICA MARTINEZ", 38], ["OMAR", "ANGEL OMAR GUZMAN LOPEZ", 42], ["ARTURO", "ARTURO GARCIA", 18], ["BLAS", "BLAS CABALLERO CABALLERO", 30], ["CARLOS", "CARLOS GOMEZ LOPEZ", 18], ["CARLOS H", "CARLOS HERNANDEZ", 1], ["CARMELA", "CARMELA ALONSO MARTINEZ", 25], ["DAMIAN", "DAMIAN RUIZ FLORES", 21], ["ELIDETH", "ELIDETH ZAMORA LOPEZ", 21], ["ELIZABETH", "ELIZABETH CUETO", 18], ["EMILIO", "EMILIO ELISEO CORTES TRUJILLO", 42], ["MESINAS", "ENRIQUE MESINAS DE JESUS", 25], ["ERICK", "ERICK PEREZ ROQUE", 35], ["GILBERTO", "GILBERTO SANTIAGO LESCAS", 42], ["GLORIA", "GLORIA MARINA CAMACHO VASQUEZ", 12], ["LEGASPI", "GUADALUPE EDITH LEGASPI CRUZ", 20], ["ISHELT", "ISHELT GONZALEZ PINEDA", 21], ["EMMANUEL", "JOSE EMMANUEL", 18], ["JUAN", "JUAN JAVIER MOSQUEDA CORTES", 35], ["KATYA", "KATYA KARIME", 27], ["GARDENIA", "LUZ GARDENIA SANTIAGO PERALTA", 25], ["PERLA", "LUZ PERLA REBOLLAR CERVANTES", 31], ["MANUELA", "MANUELA SANTIAGO MORALES", 41], ["RAMON", "RAMON MARTINEZ VASQUEZ", 25], ["PARRA", "RUBEN PARRA URDIANA", 37], ["SELA", "SELA ABIGAIL REYES COLLI", 41], ["SILVIA", "SILVIA MARTINEZ SANCHEZ", 37], ["SOFIA", "SOFIA ESTHER CRUZ MARTINEZ", 42], ["TANIA", "TANIA VILLEGAS APARICIO", 37], ["TERESA", "TERESA ANTONIO GARCIA", 31], ["VACANTE", "VACANTE", 23], ["WENDY", "WENDY LILIANA VARGAS PEÑA", 26]];
+function sembrarPersonal(v){
+  if (v.semillas?.personal) return;
+  const u = {}, lista = Object.entries(v.maestros || {});
+  let nuevos = 0;
+  PERSONAL_BASE.forEach(([al,nom,h]) => {
+    const hit = lista.find(([,m]) => normTxt(m.nombre)===normTxt(nom) || normTxt(nom).startsWith(normTxt(m.nombre)+' '))
+      || lista.find(([,m]) => normTxt(m.alias||'')===normTxt(al));
+    if (hit){
+      const [id] = hit;
+      u[`${ROOT}/maestros/${id}/nombre`] = nom; u[`${ROOT}/maestros/${id}/alias`] = al; u[`${ROOT}/maestros/${id}/horasContrato`] = h;
+    } else {
+      u[`${ROOT}/maestros/${newId()}`] = {nombre:nom, alias:al, horasContrato:h, maxDia:0, turnos:{matutino:true,mixto:true}, libres:false, numLibres:3};
+      nuevos++;
+    }
+  });
+  u[`${ROOT}/semillas/personal`] = true;
+  db.ref().update(u).then(() => { if (nuevos) toast(`Se cargó la plantilla de la escuela: ${nuevos} maestros.`); });
 }
 
 /* ===================== IMPORTAR LISTA DE PERSONAL ===================== */
@@ -1620,7 +1661,7 @@ db.ref(ROOT).on('value', snap => {
   S.config = {...clone(DEF), ...c, turnos:{matutino:{...DEF.turnos.matutino, ...(c.turnos?.matutino||{})}, mixto:{...DEF.turnos.mixto, ...(c.turnos?.mixto||{})}}};
   S.maestros = v.maestros || {}; S.asignaturas = v.asignaturas || {}; S.grupos = v.grupos || {};
   S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null; S.propuestas = v.propuestas || null;
-  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); }
+  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); sembrarPersonal(v); }
   refrescar();
 }, err => toast('No se pudo leer la base de datos: '+err.message+'. Revisa las reglas de Realtime Database.','err'));
 
@@ -1637,7 +1678,7 @@ $('#cSave').onclick = () => {
 };
 $('#cReset').onclick = () => { const c = clone(DEF); c.escuela = $('#cEscuela').value; c.ciclo = $('#cCiclo').value || DEF.ciclo; fillCfg(c); toast('Horario de la escuela restaurado. Guarda para aplicarlo.'); };
 $('#bExport').onclick = () => {
-  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas};
+  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas, semillas:{personal:true}};
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
   a.download = `horarios-respaldo-${new Date().toISOString().slice(0,10)}.json`; a.click();
@@ -1662,6 +1703,8 @@ $('#mSave').onclick = saveM; $('#mCancel').onclick = resetM;
 $('#mBloqClear').onclick = () => { bloq = {}; renderBloq(); };
 $('#mTM').onchange = renderBloq; $('#mTX').onchange = renderBloq;
 $('#mBloq').onclick = e => { const b = e.target.closest('.bq'); if (!b) return; const k = b.dataset.k; if (bloq[k]) delete bloq[k]; else bloq[k] = true; renderBloq(); $(`#mBloq [data-k="${k}"]`)?.focus(); };
+$('#mList').addEventListener('change', e => { if (e.target.matches('input[data-campo]')) guardarCampoMaestro(e.target); });
+$('#mList').addEventListener('keydown', e => { if (e.key==='Enter' && e.target.matches('input[data-campo]')) e.target.blur(); });
 $('#mList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a) editarM(a.dataset.edit); if (d) borrarM(d.dataset.del); };
 
 $('#aSave').onclick = saveA; $('#aCancel').onclick = resetA; $('#aSeed').onclick = seedA;
