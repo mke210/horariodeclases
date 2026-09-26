@@ -366,8 +366,9 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     <div id="bList" style="margin-top:16px"></div>
   </div>
   <div class="panel">
-    <div class="hbar"><h3 style="margin:0 auto 0 0">Carga registrada</h3>
-      <label>Filtrar por maestro<select id="kFiltro"></select></label></div>
+    <h3>Carga registrada</h3>
+    <div class="hbar"><label>Profesor<select id="kFiltro" style="min-width:300px"></select></label></div>
+    <div id="kResumen" class="note ok" hidden></div>
     <div id="kList"></div>
   </div>
 </section>
@@ -695,6 +696,25 @@ function sembrarHorasGrado(v){
   });
   db.ref().update(u);
 }
+function ajustarCienciasArtes(v){
+  if (v.semillas?.ciencias6) return;
+  const u = {[`${ROOT}/semillas/ciencias6`]: true}, fijas = {};
+  Object.entries(v.asignaturas || {}).forEach(([id,a]) => {
+    const n = normTxt(a.nombre);
+    if (n.startsWith('CIENCIAS') || ['BIOLOGIA','FISICA','QUIMICA'].includes(n)){
+      u[`${ROOT}/asignaturas/${id}/horasSemana`] = 6; u[`${ROOT}/asignaturas/${id}/maxDia`] = 2;
+      u[`${ROOT}/asignaturas/${id}/doble`] = true; u[`${ROOT}/asignaturas/${id}/maxDobles`] = 1; u[`${ROOT}/asignaturas/${id}/porGrado`] = null;
+      fijas[id] = true;
+    }
+    if (n.startsWith('ARTES')){
+      u[`${ROOT}/asignaturas/${id}/horasSemana`] = 2; u[`${ROOT}/asignaturas/${id}/maxDia`] = 1; u[`${ROOT}/asignaturas/${id}/porGrado`] = null;
+      fijas[id] = true;
+    }
+  });
+  // Quita horas escritas a mano en esas asignaturas para que todos los maestros tomen 6 o 2
+  Object.entries(v.asignaciones || {}).forEach(([id,a]) => { if (fijas[a.asignaturaId] && a.horas) u[`${ROOT}/asignaciones/${id}/horas`] = null; });
+  db.ref().update(u);
+}
 function sembrarPersonal(v){
   if (v.semillas?.personal) return;
   const u = {}, lista = Object.entries(v.maestros || {});
@@ -946,13 +966,22 @@ function addCarga(){
 function renderCarga(){
   fillSelect($('#kMaestro'), maestrosOrden().map(([id,m]) => [id,m.nombre]), 'Elige un maestro');
   fillSelect($('#kAsig'), asigOrden().map(([id,a]) => [id,a.nombre]), 'Elige una asignatura');
-  fillSelect($('#kFiltro'), maestrosOrden().map(([id,m]) => [id,m.nombre]), 'Todos');
+  fillSelect($('#kFiltro'), maestrosOrden().map(([id,m]) => [id, `${m.nombre} (${aliasDe(m)})`]), 'Todos los profesores');
   renderKGrupos(); kInfo();
-  const f = $('#kFiltro').value;
+  const f = $('#kFiltro').value, mf = S.maestros[f];
+  if (mf){
+    const fg = horasMaestro(f), lib = libresDe(mf), c = +mf.horasContrato||0, tot = fg+lib;
+    const tall = bloquesDe().filter(([,b]) => b.talleres?.[f]);
+    $('#kResumen').hidden = false;
+    $('#kResumen').className = 'note ' + (tot>c ? 'bad' : tot===c ? 'ok' : 'warn');
+    $('#kResumen').innerHTML = `<b>${esc(mf.nombre)}</b> (${esc(aliasDe(mf))}): ${fg} h frente a grupo${lib?` + ${lib} libres`:''} de ${c} h que trabaja` +
+      (tot>c ? `, <b>${tot-c} h de más</b>.` : tot<c ? `, le faltan ${c-tot} h por asignar.` : ', carga completa.') +
+      (tall.length ? `<br>Talleres: ${tall.map(([,b]) => `${esc(b.talleres[f])} ${esc(bloqueEtiqueta(b))} (${b.horas} h)`).join(', ')}` : '');
+  } else $('#kResumen').hidden = true;
   const rows = Object.entries(S.asignaciones).filter(([,a]) => !f || a.maestroId===f)
     .map(([id,a]) => ({id,a,m:S.maestros[a.maestroId],s:S.asignaturas[a.asignaturaId],g:S.grupos[a.grupoId]}))
     .sort((x,y) => cmp(x.m?.nombre||'',y.m?.nombre||'') || cmp(x.s?.nombre||'',y.s?.nombre||'') || ((x.g?.grado||0)-(y.g?.grado||0)) || cmp(x.g?.grupo||'',y.g?.grupo||''));
-  if (!rows.length){ $('#kList').innerHTML='<p class="empty">No hay asignaciones todavía.</p>'; return; }
+  if (!rows.length){ $('#kList').innerHTML=`<p class="empty">${mf ? (bloquesDe().some(([,b]) => b.talleres?.[f]) ? 'Solo tiene los talleres de arriba; se editan en Bloques de talleres.' : 'Este profesor no tiene asignaturas registradas.') : 'No hay asignaciones todavía.'}</p>`; return; }
   let h = '<div class="wrap"><table class="list"><thead><tr><th>Maestro</th><th>Asignatura</th><th>Grupo</th><th>Horas por semana</th><th></th></tr></thead><tbody>';
   rows.forEach(({id,a,m,s,g}) => {
     h += `<tr><td>${esc(m?.nombre||'(eliminado)')}</td><td><span class="sw" style="background:${esc(s?.color||'#999')}"></span>${esc(s?.nombre||'(eliminada)')}</td><td>${gName(g)}</td>
@@ -1708,7 +1737,7 @@ db.ref(ROOT).on('value', snap => {
   S.config = {...clone(DEF), ...c, turnos:{matutino:{...DEF.turnos.matutino, ...(c.turnos?.matutino||{})}, mixto:{...DEF.turnos.mixto, ...(c.turnos?.mixto||{})}}};
   S.maestros = v.maestros || {}; S.asignaturas = v.asignaturas || {}; S.grupos = v.grupos || {};
   S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null; S.propuestas = v.propuestas || null;
-  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); sembrarPersonal(v); sembrarHorasGrado(v); }
+  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); sembrarPersonal(v); sembrarHorasGrado(v); ajustarCienciasArtes(v); }
   refrescar();
 }, err => toast('No se pudo leer la base de datos: '+err.message+'. Revisa las reglas de Realtime Database.','err'));
 
@@ -1725,7 +1754,7 @@ $('#cSave').onclick = () => {
 };
 $('#cReset').onclick = () => { const c = clone(DEF); c.escuela = $('#cEscuela').value; c.ciclo = $('#cCiclo').value || DEF.ciclo; fillCfg(c); toast('Horario de la escuela restaurado. Guarda para aplicarlo.'); };
 $('#bExport').onclick = () => {
-  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas, semillas:{personal:true, porGrado:true}};
+  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas, semillas:{personal:true, porGrado:true, ciencias6:true}};
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
   a.download = `horarios-respaldo-${new Date().toISOString().slice(0,10)}.json`; a.click();
@@ -1765,7 +1794,7 @@ $('#gList').onchange = e => { const s = e.target.closest('[data-turno]'); if (!s
   const choca = asigValidas().filter(([,a]) => a.grupoId===s.dataset.turno).map(([,a]) => S.maestros[a.maestroId]).filter(m => m.turnos && m.turnos[s.value]===false);
   db.ref(`${ROOT}/grupos/${s.dataset.turno}/turno`).set(s.value).then(() => toast(choca.length ? `${gName(g)} cambió de turno. Ojo: ${choca.map(m=>m.nombre).join(', ')} no trabaja(n) en ese turno.` : `${gName(g)} cambió de turno.`, choca.length?'err':'ok')); };
 
-$('#kMaestro').onchange = kInfo; $('#kAsig').onchange = kInfo; $('#kAdd').onclick = addCarga;
+$('#kMaestro').onchange = () => { kInfo(); if ($('#kMaestro').value){ $('#kFiltro').value = $('#kMaestro').value; renderCarga(); } }; $('#kAsig').onchange = kInfo; $('#kAdd').onclick = addCarga;
 $('#kFiltro').onchange = renderCarga;
 $('#kGrupos').onclick = e => { const b = e.target.closest('[data-grado]'); if (!b) return;
   const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); marcarChips('kGrupos'); };
