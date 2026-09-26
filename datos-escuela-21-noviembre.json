@@ -58,7 +58,7 @@
   "m0043": {
    "nombre": "BLAS CABALLERO CABALLERO",
    "alias": "BLAS",
-   "horasContrato": 31,
+   "horasContrato": 30,
    "maxDia": 0,
    "turnos": {
     "matutino": true,
@@ -226,7 +226,7 @@
   "m0057": {
    "nombre": "LUZ PERLA REBOLLAR CERVANTES",
    "alias": "PERLA",
-   "horasContrato": 27,
+   "horasContrato": 31,
    "maxDia": 0,
    "turnos": {
     "matutino": true,
@@ -238,7 +238,7 @@
   "m0058": {
    "nombre": "MANUELA SANTIAGO MORALES",
    "alias": "MANUELA",
-   "horasContrato": 42,
+   "horasContrato": 41,
    "maxDia": 0,
    "turnos": {
     "matutino": true,
@@ -286,7 +286,7 @@
   "m0062": {
    "nombre": "SILVIA MARTINEZ SANCHEZ",
    "alias": "SILVIA",
-   "horasContrato": 41,
+   "horasContrato": 37,
    "maxDia": 0,
    "turnos": {
     "matutino": true,
@@ -310,7 +310,7 @@
   "m0064": {
    "nombre": "TANIA VILLEGAS APARICIO",
    "alias": "TANIA",
-   "horasContrato": 41,
+   "horasContrato": 37,
    "maxDia": 0,
    "turnos": {
     "matutino": true,
@@ -334,7 +334,7 @@
   "m0066": {
    "nombre": "VACANTE",
    "alias": "VACANTE",
-   "horasContrato": 18,
+   "horasContrato": 23,
    "maxDia": 0,
    "turnos": {
     "matutino": true,
@@ -344,7 +344,7 @@
    "numLibres": 3
   },
   "m0067": {
-   "nombre": "WENDY LILIANA",
+   "nombre": "WENDY LILIANA VARGAS PEÑA",
    "alias": "WENDY",
    "horasContrato": 26,
    "maxDia": 0,
@@ -381,8 +381,8 @@
   },
   "m0070": {
    "nombre": "CARLOS HERNANDEZ",
-   "alias": "CARLOS H.",
-   "horasContrato": 18,
+   "alias": "CARLOS H",
+   "horasContrato": 1,
    "maxDia": 0,
    "turnos": {
     "matutino": true,

@@ -274,6 +274,13 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     </div>
   </div>
   <div class="panel"><h3>Maestros registrados</h3><div id="mList"></div></div>
+  <div class="panel">
+    <h3>Actualizar desde la lista de personal</h3>
+    <p class="hint" style="margin:-6px 0 10px">Pega la lista (un maestro por renglón: nombre corto, nombre largo y horas que trabaja). Se actualizan los que ya existen y se agregan los nuevos, sin borrar su disponibilidad ni su carga.</p>
+    <textarea id="pTexto" rows="7" style="width:100%;font:inherit;padding:10px;border:1px solid var(--linea);border-radius:8px" placeholder="1 ABRAHAM ABRAHAM SOLIS MARTINEZ 40&#10;5 CARLOS H CARLOS HERNANDEZ 18"></textarea>
+    <div class="acts"><button class="btn" id="pRevisar">Revisar lista</button></div>
+    <div id="pPrev" style="margin-top:12px"></div>
+  </div>
 </section>
 
 <!-- 3 ASIGNATURAS -->
@@ -387,6 +394,7 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
   <div class="panel diag" id="diag"></div>
   <div class="panel">
     <div class="hbar">
+      <label>Propuestas<small>horarios distintos para comparar</small><select id="gProps"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
       <label>Intentos<small>más intentos, mejor resultado</small><input id="gIntentos" type="number" min="1" max="200" value="10" style="width:110px"></label>
       <button class="btn gold" id="gRun">Generar horario</button>
     </div>
@@ -403,6 +411,7 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
   <div class="hbar">
     <div class="tabs" role="tablist"><button id="t-grupo" class="on">Grupos</button><button id="t-maestro">Profesores</button><button id="t-bloque">Talleres</button></div>
     <select id="hSel" aria-label="Seleccionar"></select>
+    <select id="hProp" aria-label="Propuesta" hidden></select>
     <label class="chk"><input type="checkbox" id="hColor" checked>A color</label>
     <label class="chk" id="hAjusteW"><input type="checkbox" id="hAjuste">Mover clases</label>
     <button class="btn pri" id="hPrint">Imprimir</button>
@@ -639,6 +648,61 @@ function renderMaestros(){
       <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
   });
   $('#mList').innerHTML = h + '</tbody></table></div>';
+}
+
+/* ===================== IMPORTAR LISTA DE PERSONAL ===================== */
+const normTxt = x => String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
+function parsePersonal(txt){
+  const out = [];
+  txt.split(/\r?\n/).forEach(line => {
+    const l = line.replace(/<\S*/g,' ').trim(); if (!l) return;
+    let alias, nombre, horas;
+    const cols = /\t|;/.test(l) ? l.split(/\t|;/).map(x => x.trim()).filter(Boolean) : null;
+    if (cols && cols.length >= 3){
+      if (/^\d+$/.test(cols[0]) && cols.length >= 4) cols.shift();
+      horas = +cols[cols.length-1]; alias = cols[0]; nombre = cols.slice(1,-1).join(' ');
+    } else {
+      const t = l.split(/\s+/);
+      if (t.length > 2 && /^\d+$/.test(t[0])) t.shift();
+      if (!/^\d+$/.test(t[t.length-1])) return;
+      horas = +t.pop();
+      const n = t[1] && t[1].replace('.','').length <= 2 ? 2 : 1;
+      alias = t.slice(0,n).join(' '); nombre = t.slice(n).join(' ') || alias;
+    }
+    if (!alias || !(horas >= 0) || isNaN(horas)) return;
+    out.push({alias:alias.toUpperCase(), nombre:nombre.toUpperCase(), horas});
+  });
+  return out;
+}
+let cambiosPersonal = [];
+function revisarPersonal(){
+  const lista = parsePersonal($('#pTexto').value);
+  if (!lista.length) return toast('No se reconoció ningún maestro. Cada renglón debe terminar con las horas.','err');
+  const usados = new Set();
+  cambiosPersonal = lista.map(p => {
+    const np = normTxt(p.nombre), na = normTxt(p.alias);
+    let hit = Object.entries(S.maestros).find(([id,m]) => !usados.has(id) && np.length > 3 && (normTxt(m.nombre).startsWith(np) || np.startsWith(normTxt(m.nombre))));
+    if (!hit) hit = Object.entries(S.maestros).find(([id,m]) => !usados.has(id) && normTxt(m.alias||aliasDe(m))===na);
+    if (!hit) return {nuevo:true, p};
+    const [id,m] = hit; usados.add(id);
+    const nombre = np.startsWith(normTxt(m.nombre)) && np.length > normTxt(m.nombre).length ? p.nombre : m.nombre;
+    return {id, m, p, nombre};
+  });
+  const asig = id => id ? horasMaestro(id) : 0;
+  $('#pPrev').innerHTML = `<div class="wrap"><table class="list"><thead><tr><th>Nombre</th><th>Nombre corto</th><th>Horas que trabaja</th><th>Frente a grupo hoy</th><th>Acción</th></tr></thead><tbody>` +
+    cambiosPersonal.map(c => {
+      const ant = c.nuevo ? '' : `${c.m.horasContrato??'—'} → `, fg = asig(c.id);
+      const alerta = !c.nuevo && fg > c.p.horas ? ` <small style="color:var(--mal)">tiene ${fg} h asignadas</small>` : '';
+      return `<tr><td>${esc(c.nuevo ? c.p.nombre : c.nombre)}</td><td>${esc(c.p.alias)}</td><td>${ant}<b>${c.p.horas}</b>${alerta}</td><td>${c.nuevo?'—':fg}</td><td>${c.nuevo?'<b>Nuevo</b>':'Actualizar'}</td></tr>`;
+    }).join('') + '</tbody></table></div><div class="acts"><button class="btn pri" id="pAplicar">Aplicar cambios</button></div>';
+}
+function aplicarPersonal(){
+  const u = {}; let nu = 0, ac = 0;
+  cambiosPersonal.forEach(c => {
+    if (c.nuevo){ u[`${ROOT}/maestros/${newId()}`] = {nombre:c.p.nombre, alias:c.p.alias, horasContrato:c.p.horas, maxDia:0, turnos:{matutino:true,mixto:true}, libres:false, numLibres:3}; nu++; }
+    else { u[`${ROOT}/maestros/${c.id}/horasContrato`] = c.p.horas; u[`${ROOT}/maestros/${c.id}/alias`] = c.p.alias; u[`${ROOT}/maestros/${c.id}/nombre`] = c.nombre; ac++; }
+  });
+  db.ref().update(u).then(() => { toast(`Lista aplicada: ${ac} actualizados, ${nu} nuevos.`); $('#pPrev').innerHTML=''; $('#pTexto').value=''; cambiosPersonal = []; });
 }
 
 /* ===================== ASIGNATURAS ===================== */
@@ -1211,33 +1275,46 @@ function renderDiag(){
   $('#diag').innerHTML = h;
 }
 let corriendo = false;
-async function generar(){
-  if (corriendo) return;
-  const d = diagnostico();
-  if (d.err.length && !confirm(`El diagnóstico tiene ${d.err.length} problema(s). El horario puede quedar incompleto. ¿Generar de todos modos?`)) return;
-  const lessons = [];
-  for (const aid in S.asignaciones){ const L = lessonOf(aid); if (!L) continue; const h = horasDe(S.asignaciones[aid]); for (let i=0; i<h; i++) lessons.push({...L}); }
-  for (const [bid,b] of bloquesDe()){ const L = lessonOf('B:'+bid); if (!L) continue; for (let i=0; i<(+b.horas||0); i++) lessons.push({...L}); }
-  if (!lessons.length) return toast('No hay clases que acomodar. Registra la carga académica.','err');
-  corriendo = true; $('#gRun').disabled = true;
-  const tries = Math.max(1, Math.min(200, +$('#gIntentos').value || 30));
-  const seed = Date.now() % 1000003; let best = null;
+// Mide la calidad de una propuesta: horas muertas de maestros y huecos de grupos
+function metricas(gen){
+  const cl = gen.clases || {}, porM = {}, ri = toMin(S.config.recesoIni), rf = toMin(S.config.recesoFin), dur = +S.config.modDur;
+  let hg = 0;
+  for (const gid in cl){
+    const g = S.grupos[gid]; if (!g) continue;
+    const sl = slotsTurno(g.turno), dias = DIAS.map(() => []);
+    for (const k in cl[gid]){
+      const aid = cl[gid][k], [d,n] = k.split('-').map(Number), s = sl[n-1]; if (!s) continue;
+      dias[d].push(n);
+      const mids = String(aid).startsWith('B:') ? Object.keys(S.bloques[aid.slice(2)]?.talleres||{}) : [S.asignaciones[aid]?.maestroId].filter(Boolean);
+      mids.forEach(m => ((porM[m] ??= DIAS.map(() => new Map()))[d]).set(s.ini, s.fin));
+    }
+    dias.forEach(ns => { if (ns.length) hg += (Math.max(...ns) - Math.min(...ns) + 1) - ns.length; });
+  }
+  let hm = 0;
+  for (const m in porM) porM[m].forEach(mp => {
+    if (!mp.size) return;
+    const iv = [...mp.entries()].sort((a,b) => a[0]-b[0]);
+    let hueco = iv[iv.length-1][1] - iv[0][0] - iv.reduce((s,[a,b]) => s+(b-a), 0);
+    if (iv[0][0] < rf && iv[iv.length-1][1] > ri) hueco -= (rf-ri);
+    hm += Math.max(0, Math.round(hueco/dur));
+  });
+  return {huecosMaestros:hm, huecosGrupos:hg};
+}
+async function generarUna(lessons, tries, seed, etiqueta){
+  const total = lessons.length; let best = null;
+  const prog = (pct, txt) => { $('#gProg').innerHTML = `<p class="hint" style="margin:0"><b>${etiqueta}</b></p><div class="bar big"><i style="width:${pct}%"></i></div><p class="hint">${txt}</p>`; };
   for (let t=0; t<tries; t++){
     const res = intento(makeEngine(), lessons, 30000, mulberry32(seed + t*7919));
     if (!best || res.faltan.length < best.faltan.length) best = res;
-    $('#gProg').innerHTML = `<div class="bar big"><i style="width:${(t+1)/tries*100}%"></i></div><p class="hint">Intento ${t+1} de ${tries}: mejor resultado ${lessons.length-best.faltan.length} de ${lessons.length} sesiones colocadas.</p>`;
+    prog((t+1)/tries*100, `Intento ${t+1} de ${tries}: ${total-best.faltan.length} de ${total} sesiones colocadas.`);
     await new Promise(r => setTimeout(r, 0));
     if (!best.faltan.length) break;
   }
   if (best.faltan.length){
-    const total = lessons.length;
-    best = await busquedaLocal(best.E, best.faltan, mulberry32(seed+1), 200000, (it,m) => {
-      $('#gProg').innerHTML = `<div class="bar big"><i style="width:${Math.min(100,it/2000)}%"></i></div><p class="hint">Reacomodando clases: ${total-m} de ${total} sesiones colocadas.</p>`;
-    });
+    best = await busquedaLocal(best.E, best.faltan, mulberry32(seed+1), 200000, (it,m) =>
+      prog(Math.min(100,it/2000), `Reacomodando clases: ${total-m} de ${total} sesiones colocadas.`));
   }
-  const E = best.E;
-  const lib = asignarLibres(E);
-  const clases = {};
+  const E = best.E, lib = asignarLibres(E), clases = {};
   for (const gid in E.grid) E.grid[gid].forEach((dia,d) => dia.forEach((aid,i) => { if (aid) (clases[gid] ??= {})[`${d}-${i+1}`] = aid; }));
   const falt = {};
   best.faltan.forEach(L => { (falt[L.aid] ??= {aid:L.aid, n:0, motivo:''}).n++; });
@@ -1247,17 +1324,57 @@ async function generar(){
     const top = Object.entries(tally).sort((a,b) => b[1]-a[1])[0];
     f.motivo = top ? MOT[top[0]] : MOT.grupo;
   });
-  const gen = {fecha:Date.now(), firma:firma(), total:lessons.length, colocadas:lessons.length-best.faltan.length,
+  const gen = {fecha:Date.now(), firma:firma(), total, colocadas:total-best.faltan.length,
     clases, libres:lib.mapa, avisosLibres:lib.avisos, faltantes:Object.values(falt)};
-  try { await db.ref(`${ROOT}/generado`).set(gen); toast(best.faltan.length ? 'Horario generado con clases pendientes. Revisa el resultado.' : 'Horario generado completo.', best.faltan.length?'err':'ok'); }
-  catch(e){ toast('No se pudo guardar el horario: '+e.message,'err'); }
+  gen.metricas = metricas(gen);
+  return gen;
+}
+async function generar(){
+  if (corriendo) return;
+  const d = diagnostico();
+  if (d.err.length && !confirm(`El diagnóstico tiene ${d.err.length} problema(s). El horario puede quedar incompleto. ¿Generar de todos modos?`)) return;
+  const lessons = [];
+  for (const aid in S.asignaciones){ const L = lessonOf(aid); if (!L) continue; const h = horasDe(S.asignaciones[aid]); for (let i=0; i<h; i++) lessons.push({...L}); }
+  for (const [bid,b] of bloquesDe()){ const L = lessonOf('B:'+bid); if (!L) continue; for (let i=0; i<(+b.horas||0); i++) lessons.push({...L}); }
+  if (!lessons.length) return toast('No hay clases que acomodar. Registra la carga académica.','err');
+  corriendo = true; $('#gRun').disabled = true;
+  const tries = Math.max(1, Math.min(200, +$('#gIntentos').value || 10));
+  const nProp = Math.max(1, Math.min(3, +$('#gProps').value || 1));
+  const seed = Date.now() % 1000003, props = {};
+  for (let k=1; k<=nProp; k++){
+    props['p'+k] = await generarUna(lessons, tries, seed + k*104729, nProp>1 ? `Propuesta ${k} de ${nProp}` : 'Generando horario');
+    props['p'+k].propuesta = 'p'+k;
+  }
+  // La mejor: la más completa y, después, con menos horas muertas de maestros
+  const mejor = Object.keys(props).sort((a,b) => (arr(props[a].faltantes).reduce((s,f)=>s+f.n,0) - arr(props[b].faltantes).reduce((s,f)=>s+f.n,0))
+    || (props[a].metricas.huecosMaestros - props[b].metricas.huecosMaestros) || (props[a].metricas.huecosGrupos - props[b].metricas.huecosGrupos))[0];
+  $('#gProg').innerHTML = '';
+  try {
+    await db.ref(ROOT).update({propuestas:props, generado:clone(props[mejor])});
+    const n = Object.keys(props).length;
+    toast(n>1 ? `Se generaron ${n} propuestas. Quedó en uso la propuesta ${mejor.slice(1)}, la mejor evaluada.` : (props[mejor].faltantes?.length ? 'Horario generado con clases pendientes. Revisa el resultado.' : 'Horario generado completo.'));
+  } catch(e){ toast('No se pudo guardar el horario: '+e.message,'err'); }
   corriendo = false; $('#gRun').disabled = false;
 }
+function usarPropuesta(k){
+  const p = S.propuestas?.[k]; if (!p) return;
+  db.ref(`${ROOT}/generado`).set(clone(p)).then(() => toast(`Propuesta ${k.slice(1)} en uso.`));
+}
 function renderResultado(){
-  const g = S.generado;
+  const g = S.generado, P = S.propuestas || {};
   if (!g){ $('#gRes').innerHTML=''; return; }
+  let h = '';
+  const ks = Object.keys(P).sort();
+  if (ks.length > 1){
+    h += `<div class="panel"><h3>Propuestas generadas</h3><p class="hint" style="margin-top:-8px">Menos horas muertas significa horarios más compactos para los maestros. Revisa cada una en Vista previa antes de elegir.</p>
+      <div class="wrap"><table class="list"><thead><tr><th>Propuesta</th><th>Sesiones colocadas</th><th>Horas muertas de maestros</th><th>Huecos en grupos</th><th></th></tr></thead><tbody>` +
+      ks.map(k => { const p = P[k], enUso = g.propuesta===k;
+        return `<tr><td><b>Propuesta ${k.slice(1)}</b></td><td>${p.colocadas} de ${p.total}</td><td>${p.metricas?.huecosMaestros ?? '—'}</td><td>${p.metricas?.huecosGrupos ?? '—'}</td>
+          <td class="ra">${enUso ? '<span class="pill" style="background:var(--ok);color:#fff;border-color:var(--ok)">En uso</span>' : `<button class="btn sm" data-usar="${k}">Usar esta</button>`}</td></tr>`; }).join('') +
+      '</tbody></table></div></div>';
+  }
   const falt = arr(g.faltantes), av = arr(g.avisosLibres), completo = !falt.length;
-  let h = `<div class="panel"><h3>Último horario generado</h3><p class="hint" style="margin-top:-8px">${new Date(g.fecha).toLocaleString('es-MX',{dateStyle:'long',timeStyle:'short'})}</p>`;
+  h += `<div class="panel"><h3>${g.propuesta && ks.length>1 ? `Propuesta ${g.propuesta.slice(1)} (en uso)` : 'Último horario generado'}</h3><p class="hint" style="margin-top:-8px">${new Date(g.fecha).toLocaleString('es-MX',{dateStyle:'long',timeStyle:'short'})}</p>`;
   if (g.firma !== firma()) h += '<div class="note warn">Cambiaste datos después de generar este horario. Genera de nuevo para que lo refleje.</div>';
   h += `<div class="note ${completo?'ok':'bad'}">${g.colocadas} de ${g.total} sesiones colocadas.${completo?' El horario está completo.':''}</div>`;
   if (falt.length){
@@ -1269,7 +1386,7 @@ function renderResultado(){
     }).join('') + '</ul><p class="hint">Prueba con más intentos, libera disponibilidad del maestro o afloja alguna condicionante.</p>';
   }
   if (av.length) h += '<h3 style="margin-top:14px">Horas libres</h3><ul class="msgs">' + av.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
-  h += `<div class="acts"><button class="btn pri" data-go="horarios">Ver vista previa</button><button class="btn del" id="gBorrar">Borrar horario generado</button></div></div>`;
+  h += `<div class="acts"><button class="btn pri" data-go="horarios">Ver vista previa</button><button class="btn del" id="gBorrar">Borrar horarios generados</button></div></div>`;
   $('#gRes').innerHTML = h;
 }
 
@@ -1411,7 +1528,9 @@ function renderHorario(){
     : [['*','Todos los bloques'], ...nombresBloque().map(n => [n,n])];
   fillSelect($('#hSel'), items);
   if (!$('#hSel').value || ($('#hSel').value==='*' && !$('#hSel').dataset.elegido)) $('#hSel').value = items[1] ? items[1][0] : '*';
-  const gen = S.generado;
+  const gen = S.generado, pks = Object.keys(S.propuestas||{}).sort();
+  $('#hProp').hidden = pks.length < 2;
+  $('#hProp').innerHTML = pks.map(k => `<option value="${k}" ${gen?.propuesta===k?'selected':''}>Propuesta ${k.slice(1)}</option>`).join('');
   $('#hStale').innerHTML = gen && gen.firma !== firma() ? '<div class="note warn">Cambiaste datos después de generar este horario. Genera de nuevo para que lo refleje.</div>' : '';
   const puedeAjustar = hModo==='grupo' && $('#hSel').value!=='*' && !!gen;
   $('#hAjusteW').hidden = !puedeAjustar;
@@ -1454,6 +1573,8 @@ function mover(gid, A, B){
   const u = {};
   u[`${ROOT}/generado/clases/${gid}/${kA}`] = aidB || null;
   u[`${ROOT}/generado/clases/${gid}/${kB}`] = aidA || null;
+  const pk = S.generado?.propuesta;
+  if (pk && S.propuestas?.[pk]){ u[`${ROOT}/propuestas/${pk}/clases/${gid}/${kA}`] = aidB || null; u[`${ROOT}/propuestas/${pk}/clases/${gid}/${kB}`] = aidA || null; }
   db.ref().update(u).then(() => toast(aidB ? 'Clases intercambiadas.' : 'Clase movida.'));
 }
 function imprimir(){
@@ -1471,7 +1592,7 @@ function renderNav(){
   const cfgOk = !TURNOS.some(t => calcSlots(S.config,t).er.length);
   const c = {config:cfgOk?'Listo':'Revisar', maestros:Object.keys(S.maestros).length, asignaturas:Object.keys(S.asignaturas).length,
     grupos:Object.keys(S.grupos).length, carga:Object.keys(S.asignaciones).length + bloquesDe().length, reglas:Object.keys(S.reglas).length,
-    generar:S.generado ? `${S.generado.colocadas}/${S.generado.total}` : ''};
+    generar:S.generado ? (Object.keys(S.propuestas||{}).length>1 ? `${Object.keys(S.propuestas).length} prop.` : `${S.generado.colocadas}/${S.generado.total}`) : ''};
   for (const k in c){ const el = $('#n-'+k); if (el) el.textContent = c[k] || ''; }
   const done = {config:cfgOk, maestros:c.maestros>0, asignaturas:c.asignaturas>0, grupos:c.grupos>0, carga:c.carga>0, reglas:c.reglas>0, generar:!!S.generado && !arr(S.generado.faltantes).length, horarios:!!S.generado};
   $$('#nav button').forEach(b => b.classList.toggle('done', !!done[b.dataset.v]));
@@ -1498,7 +1619,7 @@ db.ref(ROOT).on('value', snap => {
   const v = snap.val() || {}, c = v.config || {};
   S.config = {...clone(DEF), ...c, turnos:{matutino:{...DEF.turnos.matutino, ...(c.turnos?.matutino||{})}, mixto:{...DEF.turnos.mixto, ...(c.turnos?.mixto||{})}}};
   S.maestros = v.maestros || {}; S.asignaturas = v.asignaturas || {}; S.grupos = v.grupos || {};
-  S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null;
+  S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null; S.propuestas = v.propuestas || null;
   if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); }
   refrescar();
 }, err => toast('No se pudo leer la base de datos: '+err.message+'. Revisa las reglas de Realtime Database.','err'));
@@ -1516,7 +1637,7 @@ $('#cSave').onclick = () => {
 };
 $('#cReset').onclick = () => { const c = clone(DEF); c.escuela = $('#cEscuela').value; c.ciclo = $('#cCiclo').value || DEF.ciclo; fillCfg(c); toast('Horario de la escuela restaurado. Guarda para aplicarlo.'); };
 $('#bExport').onclick = () => {
-  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado};
+  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas};
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
   a.download = `horarios-respaldo-${new Date().toISOString().slice(0,10)}.json`; a.click();
@@ -1568,7 +1689,12 @@ $('#rTipo').onchange = renderReglaForm; $('#rCond').onchange = renderReglaForm; 
 $('#rList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/reglas/${d.dataset.del}`).remove().then(() => toast('Condicionante quitada.')); };
 
 $('#gRun').onclick = generar;
-$('#gRes').addEventListener('click', e => { if (e.target.id==='gBorrar' && confirm('¿Borrar el horario generado? Los datos capturados no se tocan.')) db.ref(`${ROOT}/generado`).remove().then(() => toast('Horario borrado.')); });
+$('#gRes').addEventListener('click', e => {
+  const us = e.target.closest('[data-usar]'); if (us) usarPropuesta(us.dataset.usar);
+  if (e.target.id==='gBorrar' && confirm('¿Borrar los horarios generados y sus propuestas? Los datos capturados no se tocan.')) db.ref(ROOT).update({generado:null, propuestas:null}).then(() => toast('Horarios borrados.')); });
+$('#pRevisar').onclick = revisarPersonal;
+$('#pPrev').addEventListener('click', e => { if (e.target.id==='pAplicar') aplicarPersonal(); });
+$('#hProp').onchange = () => usarPropuesta($('#hProp').value);
 
 ['grupo','maestro','bloque'].forEach(m => $('#t-'+m).onclick = () => { hModo = m; selCell = null; $('#hSel').value = ''; delete $('#hSel').dataset.elegido; renderHorario(); });
 $('#hSel').onchange = () => { selCell = null; $('#hSel').dataset.elegido = '1'; renderHorario(); };
