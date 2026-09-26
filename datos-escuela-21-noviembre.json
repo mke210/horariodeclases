@@ -463,7 +463,12 @@
    "horasSemana": 4,
    "maxDia": 1,
    "doble": false,
-   "color": "#CFCFFF"
+   "color": "#CFCFFF",
+   "porGrado": {
+    "g1": 2,
+    "g2": 4,
+    "g3": 4
+   }
   },
   "s0034": {
    "nombre": "GEOGRAFIA",
@@ -479,7 +484,12 @@
    "horasSemana": 4,
    "maxDia": 1,
    "doble": false,
-   "color": "#C47C7C"
+   "color": "#C47C7C",
+   "porGrado": {
+    "g1": 2,
+    "g2": 4,
+    "g3": 4
+   }
   },
   "s0036": {
    "nombre": "INGLES",
@@ -670,14 +680,12 @@
   "a0076": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0001",
-   "horas": 2
+   "grupoId": "g0001"
   },
   "a0077": {
    "maestroId": "m0055",
    "asignaturaId": "s0035",
-   "grupoId": "g0001",
-   "horas": 2
+   "grupoId": "g0001"
   },
   "a0078": {
    "maestroId": "m0057",
@@ -712,8 +720,7 @@
   "a0084": {
    "maestroId": "m0044",
    "asignaturaId": "s0035",
-   "grupoId": "g0002",
-   "horas": 2
+   "grupoId": "g0002"
   },
   "a0085": {
    "maestroId": "m0048",
@@ -723,8 +730,7 @@
   "a0086": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0002",
-   "horas": 2
+   "grupoId": "g0002"
   },
   "a0087": {
    "maestroId": "m0057",
@@ -764,8 +770,7 @@
   "a0094": {
    "maestroId": "m0045",
    "asignaturaId": "s0035",
-   "grupoId": "g0003",
-   "horas": 2
+   "grupoId": "g0003"
   },
   "a0095": {
    "maestroId": "m0048",
@@ -775,8 +780,7 @@
   "a0096": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0003",
-   "horas": 2
+   "grupoId": "g0003"
   },
   "a0097": {
    "maestroId": "m0057",
@@ -821,8 +825,7 @@
   "a0105": {
    "maestroId": "m0045",
    "asignaturaId": "s0035",
-   "grupoId": "g0004",
-   "horas": 2
+   "grupoId": "g0004"
   },
   "a0106": {
    "maestroId": "m0048",
@@ -832,8 +835,7 @@
   "a0107": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0004",
-   "horas": 2
+   "grupoId": "g0004"
   },
   "a0108": {
    "maestroId": "m0057",
@@ -873,8 +875,7 @@
   "a0115": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0005",
-   "horas": 2
+   "grupoId": "g0005"
   },
   "a0116": {
    "maestroId": "m0053",
@@ -889,8 +890,7 @@
   "a0118": {
    "maestroId": "m0057",
    "asignaturaId": "s0035",
-   "grupoId": "g0005",
-   "horas": 2
+   "grupoId": "g0005"
   },
   "a0119": {
    "maestroId": "m0060",
@@ -930,8 +930,7 @@
   "a0126": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0006",
-   "horas": 2
+   "grupoId": "g0006"
   },
   "a0127": {
    "maestroId": "m0053",
@@ -956,8 +955,7 @@
   "a0131": {
    "maestroId": "m0066",
    "asignaturaId": "s0035",
-   "grupoId": "g0006",
-   "horas": 2
+   "grupoId": "g0006"
   },
   "a0132": {
    "maestroId": "m0066",
@@ -982,8 +980,7 @@
   "a0136": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0007",
-   "horas": 2
+   "grupoId": "g0007"
   },
   "a0137": {
    "maestroId": "m0053",
@@ -1003,8 +1000,7 @@
   "a0140": {
    "maestroId": "m0062",
    "asignaturaId": "s0035",
-   "grupoId": "g0007",
-   "horas": 2
+   "grupoId": "g0007"
   },
   "a0141": {
    "maestroId": "m0063",
@@ -1039,8 +1035,7 @@
   "a0147": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0008",
-   "horas": 2
+   "grupoId": "g0008"
   },
   "a0148": {
    "maestroId": "m0056",
@@ -1055,8 +1050,7 @@
   "a0150": {
    "maestroId": "m0062",
    "asignaturaId": "s0035",
-   "grupoId": "g0008",
-   "horas": 2
+   "grupoId": "g0008"
   },
   "a0151": {
    "maestroId": "m0063",
@@ -1086,8 +1080,7 @@
   "a0156": {
    "maestroId": "m0051",
    "asignaturaId": "s0033",
-   "grupoId": "g0009",
-   "horas": 2
+   "grupoId": "g0009"
   },
   "a0157": {
    "maestroId": "m0056",
@@ -1112,8 +1105,7 @@
   "a0161": {
    "maestroId": "m0066",
    "asignaturaId": "s0035",
-   "grupoId": "g0009",
-   "horas": 2
+   "grupoId": "g0009"
   },
   "a0162": {
    "maestroId": "m0067",
@@ -2092,5 +2084,9 @@
     "m0072": "INFORMATICA"
    }
   }
+ },
+ "semillas": {
+  "personal": true,
+  "porGrado": true
  }
 }

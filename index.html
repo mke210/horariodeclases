@@ -65,6 +65,7 @@ table.list{width:100%;border-collapse:collapse;font-size:.95rem}
 .list th{font-size:.82rem;color:var(--suave);font-weight:700}
 .list td.ra{text-align:right;white-space:nowrap}
 .hin{width:72px}
+.porgrado{display:flex;gap:6px}.porgrado input{width:33%}
 .mtab input{width:100%;padding:6px 8px}.mtab .in-nom{min-width:230px}.mtab .in-ali{min-width:100px;max-width:130px}.mtab .in-hor{width:70px}
 .sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:8px}
 .empty{color:var(--suave);padding:8px 0;margin:0}
@@ -294,6 +295,7 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
       <label>Nombre<input id="aNombre" placeholder="Ej. Matemáticas"></label>
       <label>Abreviatura<small>opcional, ej. FCYE</small><input id="aAbrev"></label>
       <label>Veces por semana<input id="aHoras" type="number" min="1" max="20" value="5"></label>
+      <label>Horas por grado<small>opcional, si cambia según el grado</small><span class="porgrado"><input id="aG1" type="number" min="1" max="20" placeholder="1°" aria-label="Horas en primer grado"><input id="aG2" type="number" min="1" max="20" placeholder="2°" aria-label="Horas en segundo grado"><input id="aG3" type="number" min="1" max="20" placeholder="3°" aria-label="Horas en tercer grado"></span></label>
       <label>Máximo de horas por día<input id="aMaxDia" type="number" min="1" max="5" value="1"></label>
       <label>Días con esas horas juntas<small>por semana, si el máximo es 2 o más</small><input id="aDobles" type="number" min="0" max="5" value="1"></label>
       <label>Color en el horario<input id="aColor" type="color" value="#2F6FB5"></label>
@@ -483,7 +485,9 @@ function toast(msg, tipo='ok'){ const t=$('#toast'); t.textContent=msg; t.classN
 let S = {config:clone(DEF),maestros:{},asignaturas:{},grupos:{},asignaciones:{},reglas:{},bloques:{},generado:null};
 let cargado = false;
 
-const horasDe = a => +a.horas || +(S.asignaturas[a.asignaturaId]?.horasSemana) || 0;
+// Horas de una asignatura para un grado: la del grado si existe, si no la general
+const horasAsigGrado = (s, grado) => +(s?.porGrado?.['g'+grado]) || +s?.horasSemana || 0;
+const horasDe = a => +a.horas || horasAsigGrado(S.asignaturas[a.asignaturaId], S.grupos[a.grupoId]?.grado);
 const asigValidas = () => Object.entries(S.asignaciones).filter(([,a]) => S.maestros[a.maestroId] && S.asignaturas[a.asignaturaId] && S.grupos[a.grupoId]);
 const bloquesDe = () => Object.entries(S.bloques || {});
 const horasMaestro = mid => asigValidas().filter(([,a]) => a.maestroId===mid).reduce((s,[,a]) => s+horasDe(a), 0)
@@ -681,6 +685,16 @@ function guardarCampoMaestro(inp){
 /* ===================== PLANTILLA DE LA ESCUELA (se carga sola la primera vez) ===================== */
 // [nombre corto, nombre largo, horas que trabaja]
 const PERSONAL_BASE = [["ABRAHAM", "ABRAHAM SOLIS MARTINEZ", 40], ["AMANDA", "AMANDA GARNICA MARTINEZ", 38], ["OMAR", "ANGEL OMAR GUZMAN LOPEZ", 42], ["ARTURO", "ARTURO GARCIA", 18], ["BLAS", "BLAS CABALLERO CABALLERO", 30], ["CARLOS", "CARLOS GOMEZ LOPEZ", 18], ["CARLOS H", "CARLOS HERNANDEZ", 1], ["CARMELA", "CARMELA ALONSO MARTINEZ", 25], ["DAMIAN", "DAMIAN RUIZ FLORES", 21], ["ELIDETH", "ELIDETH ZAMORA LOPEZ", 21], ["ELIZABETH", "ELIZABETH CUETO", 18], ["EMILIO", "EMILIO ELISEO CORTES TRUJILLO", 42], ["MESINAS", "ENRIQUE MESINAS DE JESUS", 25], ["ERICK", "ERICK PEREZ ROQUE", 35], ["GILBERTO", "GILBERTO SANTIAGO LESCAS", 42], ["GLORIA", "GLORIA MARINA CAMACHO VASQUEZ", 12], ["LEGASPI", "GUADALUPE EDITH LEGASPI CRUZ", 20], ["ISHELT", "ISHELT GONZALEZ PINEDA", 21], ["EMMANUEL", "JOSE EMMANUEL", 18], ["JUAN", "JUAN JAVIER MOSQUEDA CORTES", 35], ["KATYA", "KATYA KARIME", 27], ["GARDENIA", "LUZ GARDENIA SANTIAGO PERALTA", 25], ["PERLA", "LUZ PERLA REBOLLAR CERVANTES", 31], ["MANUELA", "MANUELA SANTIAGO MORALES", 41], ["RAMON", "RAMON MARTINEZ VASQUEZ", 25], ["PARRA", "RUBEN PARRA URDIANA", 37], ["SELA", "SELA ABIGAIL REYES COLLI", 41], ["SILVIA", "SILVIA MARTINEZ SANCHEZ", 37], ["SOFIA", "SOFIA ESTHER CRUZ MARTINEZ", 42], ["TANIA", "TANIA VILLEGAS APARICIO", 37], ["TERESA", "TERESA ANTONIO GARCIA", 31], ["VACANTE", "VACANTE", 23], ["WENDY", "WENDY LILIANA VARGAS PEÑA", 26]];
+function sembrarHorasGrado(v){
+  if (v.semillas?.porGrado) return;
+  const u = {[`${ROOT}/semillas/porGrado`]: true};
+  Object.entries(v.asignaturas || {}).forEach(([id,a]) => {
+    const n = normTxt(a.nombre), ab = normTxt(a.abrev);
+    if ((n==='HISTORIA' || n.startsWith('FORMACION CIVICA') || ab==='FCYE') && !a.porGrado)
+      u[`${ROOT}/asignaturas/${id}/porGrado`] = {g1:2, g2:4, g3:4};
+  });
+  db.ref().update(u);
+}
 function sembrarPersonal(v){
   if (v.semillas?.personal) return;
   const u = {}, lista = Object.entries(v.maestros || {});
@@ -758,9 +772,13 @@ function aplicarPersonal(){
 /* ===================== ASIGNATURAS ===================== */
 let editA = null;
 function resetA(){
-  editA=null; $('#aNombre').value=''; $('#aAbrev').value=''; $('#aDobles').value=1; $('#aHoras').value=5; $('#aMaxDia').value=1; $('#aDoble').checked=false;
+  editA=null; $('#aNombre').value=''; $('#aAbrev').value=''; ['aG1','aG2','aG3'].forEach(i => $('#'+i).value=''); $('#aDobles').value=1; $('#aHoras').value=5; $('#aMaxDia').value=1; $('#aDoble').checked=false;
   $('#aColor').value = PALETA[Object.keys(S.asignaturas).length % PALETA.length];
   $('#aSave').textContent='Agregar asignatura'; $('#aCancel').hidden=true;
+}
+function leerPorGrado(){
+  const o = {}; [1,2,3].forEach(g => { const v = +$('#aG'+g).value; if (v>0) o['g'+g] = v; });
+  return Object.keys(o).length ? o : null;
 }
 function saveA(){
   const nombre=$('#aNombre').value.trim(), horas=+$('#aHoras').value, maxDia=+$('#aMaxDia').value;
@@ -768,17 +786,18 @@ function saveA(){
   if (!(horas>0)) return toast('Indica cuántas veces por semana se imparte.','err');
   if (!(maxDia>0)) return toast('El máximo por día debe ser al menos 1.','err');
   const capA = {maxDia, maxDobles:+$('#aDobles').value};
-  if (horas > capSemana(capA)) return toast(`${horas} horas no caben en la semana con ${textoCap(capA)}.`,'err');
+  const pg = leerPorGrado(), hmax = Math.max(horas, ...Object.values(pg||{}));
+  if (hmax > capSemana(capA)) return toast(`${hmax} horas no caben en la semana con ${textoCap(capA)}.`,'err');
   const dup = Object.entries(S.asignaturas).find(([id,a]) => id!==editA && cmp(a.nombre,nombre)===0);
   if (dup) return toast('Ya existe una asignatura con ese nombre.','err');
   const id = editA || newId(), eraEdit = !!editA;
-  db.ref(`${ROOT}/asignaturas/${id}`).set({nombre, abrev:$('#aAbrev').value.trim().toUpperCase(), horasSemana:horas, maxDia, maxDobles:+$('#aDobles').value||0, doble:$('#aDoble').checked, color:$('#aColor').value})
+  db.ref(`${ROOT}/asignaturas/${id}`).set({nombre, abrev:$('#aAbrev').value.trim().toUpperCase(), horasSemana:horas, maxDia, maxDobles:+$('#aDobles').value||0, doble:$('#aDoble').checked, color:$('#aColor').value, porGrado:leerPorGrado()})
     .then(() => { toast(eraEdit?'Asignatura actualizada.':'Asignatura agregada.'); resetA(); });
 }
 function editarA(id){
   const a=S.asignaturas[id]; if (!a) return; editA=id;
   $('#aNombre').value=a.nombre; $('#aAbrev').value=a.abrev||''; $('#aHoras').value=a.horasSemana; $('#aMaxDia').value=a.maxDia||1;
-  $('#aDoble').checked=!!a.doble; $('#aDobles').value=maxDobles({...a, maxDia:Math.max(2,+a.maxDia||1)}); $('#aColor').value=a.color||PALETA[0];
+  [1,2,3].forEach(g => $('#aG'+g).value = a.porGrado?.['g'+g] || ''); $('#aDoble').checked=!!a.doble; $('#aDobles').value=maxDobles({...a, maxDia:Math.max(2,+a.maxDia||1)}); $('#aColor').value=a.color||PALETA[0];
   $('#aSave').textContent='Guardar cambios'; $('#aCancel').hidden=false;
   $('#v-asignaturas').scrollIntoView({behavior:'smooth'});
 }
@@ -792,7 +811,7 @@ function borrarA(id){
   db.ref().update(u).then(() => { toast('Asignatura eliminada.'); if (editA===id) resetA(); });
 }
 function seedA(){
-  const ej = [['Español',5,1],['Matemáticas',5,1],['Inglés',3,1],['Ciencias',4,1],['Geografía',4,1],['Historia',2,1],
+  const ej = [['Español',5,1],['Matemáticas',5,1],['Inglés',3,1],['Ciencias',6,2],['Geografía',4,1],['Historia',2,1],
     ['Formación Cívica y Ética',2,1],['Artes',3,1],['Educación Física',2,1],['Tecnología',3,2],['Tutoría',1,1]];
   const u = {}; let n = 0;
   ej.forEach(([nombre,h,md],i) => {
@@ -808,7 +827,7 @@ function renderAsignaturas(){
   let h = '<div class="wrap"><table class="list"><thead><tr><th>Asignatura</th><th>Por semana</th><th>Máx. por día</th><th>Días con horas juntas</th><th>Grupos</th><th></th></tr></thead><tbody>';
   rows.forEach(([id,a]) => {
     const ng = Object.values(S.asignaciones).filter(x => x.asignaturaId===id).length;
-    h += `<tr><td><span class="sw" style="background:${esc(a.color)}"></span><b>${esc(a.nombre)}</b>${a.abrev?` <small class="hint">(${esc(a.abrev)})</small>`:''}</td><td>${a.horasSemana}</td><td>${a.maxDia||1}</td><td>${(+a.maxDia||1)>1 ? `${a.maxDia} ${a.doble?'seguidas':'horas'}, ${maxDobles(a)} día(s)` : 'No'}</td><td>${ng}</td>
+    h += `<tr><td><span class="sw" style="background:${esc(a.color)}"></span><b>${esc(a.nombre)}</b>${a.abrev?` <small class="hint">(${esc(a.abrev)})</small>`:''}</td><td>${a.porGrado && Object.keys(a.porGrado).length ? [1,2,3].map(g => `${g}°: ${horasAsigGrado(a,g)}`).join(', ') : a.horasSemana}</td><td>${a.maxDia||1}</td><td>${(+a.maxDia||1)>1 ? `${a.maxDia} ${a.doble?'seguidas':'horas'}, ${maxDobles(a)} día(s)` : 'No'}</td><td>${ng}</td>
       <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
   });
   $('#aList').innerHTML = h + '</tbody></table></div>';
@@ -892,11 +911,11 @@ function marcarChips(cont){
 }
 function kInfo(){
   const mid=$('#kMaestro').value, sid=$('#kAsig').value, s=S.asignaturas[sid], m=S.maestros[mid];
-  $('#kHoras').placeholder = s ? `${s.horasSemana} (de la asignatura)` : '';
+  $('#kHoras').placeholder = s ? (s.porGrado ? 'según el grado' : `${s.horasSemana} (de la asignatura)`) : '';
   if (m){
-    const fg=horasMaestro(mid), lib=libresDe(m), n=$$('#kGrupos input:checked').length, hs=(+$('#kHoras').value||+s?.horasSemana||0);
+    const fg=horasMaestro(mid), lib=libresDe(m), sel=$$('#kGrupos input:checked').map(i => S.grupos[i.value]).filter(Boolean), n=sel.length, suma=sel.reduce((t,g) => t + (+$('#kHoras').value || horasAsigGrado(s,g.grado)), 0);
     let t = `${m.nombre} lleva ${fg} h frente a grupo${lib?` + ${lib} libres`:''} de ${m.horasContrato} h.`;
-    if (n && hs){ const nuevo = fg+lib+n*hs; t += ` Con esta asignación quedaría en ${nuevo} h (${n} grupo${n>1?'s':''} × ${hs} h)${nuevo>+m.horasContrato?', más de sus horas de trabajo':''}.`; }
+    if (n && suma){ const nuevo = fg+lib+suma; t += ` Con esta asignación quedaría en ${nuevo} h (+${suma} h en ${n} grupo${n>1?'s':''})${nuevo>+m.horasContrato?', más de sus horas de trabajo':''}.`; }
     $('#kInfo').textContent = t;
   }
   else $('#kInfo').textContent = '';
@@ -908,7 +927,7 @@ function addCarga(){
   if (!sid) return toast('Elige una asignatura.','err');
   if (!gids.length) return toast('Marca al menos un grupo.','err');
   const m = S.maestros[mid], s = S.asignaturas[sid];
-  const h = horas || s.horasSemana;
+  const h = Math.max(...gids.map(gid => horas || horasAsigGrado(s, S.grupos[gid]?.grado)));
   if (h > capSemana(s)) return toast(`${h} horas no caben en la semana con ${textoCap(s)}. Ajústalo en Asignaturas.`,'err');
   const u = {}; let n = 0; const avisos = [];
   for (const gid of gids){
@@ -937,7 +956,7 @@ function renderCarga(){
   let h = '<div class="wrap"><table class="list"><thead><tr><th>Maestro</th><th>Asignatura</th><th>Grupo</th><th>Horas por semana</th><th></th></tr></thead><tbody>';
   rows.forEach(({id,a,m,s,g}) => {
     h += `<tr><td>${esc(m?.nombre||'(eliminado)')}</td><td><span class="sw" style="background:${esc(s?.color||'#999')}"></span>${esc(s?.nombre||'(eliminada)')}</td><td>${gName(g)}</td>
-      <td><input class="hin" type="number" min="1" max="20" value="${a.horas||''}" placeholder="${s?.horasSemana||''}" data-hor="${id}" aria-label="Horas por semana"></td>
+      <td><input class="hin" type="number" min="1" max="20" value="${a.horas||''}" placeholder="${s&&g?horasAsigGrado(s,g.grado):''}" data-hor="${id}" aria-label="Horas por semana"></td>
       <td class="ra"><button class="btn sm del" data-del="${id}">Quitar</button></td></tr>`;
   });
   $('#kList').innerHTML = h + '</tbody></table></div>';
@@ -1689,7 +1708,7 @@ db.ref(ROOT).on('value', snap => {
   S.config = {...clone(DEF), ...c, turnos:{matutino:{...DEF.turnos.matutino, ...(c.turnos?.matutino||{})}, mixto:{...DEF.turnos.mixto, ...(c.turnos?.mixto||{})}}};
   S.maestros = v.maestros || {}; S.asignaturas = v.asignaturas || {}; S.grupos = v.grupos || {};
   S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null; S.propuestas = v.propuestas || null;
-  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); sembrarPersonal(v); }
+  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); sembrarPersonal(v); sembrarHorasGrado(v); }
   refrescar();
 }, err => toast('No se pudo leer la base de datos: '+err.message+'. Revisa las reglas de Realtime Database.','err'));
 
@@ -1706,7 +1725,7 @@ $('#cSave').onclick = () => {
 };
 $('#cReset').onclick = () => { const c = clone(DEF); c.escuela = $('#cEscuela').value; c.ciclo = $('#cCiclo').value || DEF.ciclo; fillCfg(c); toast('Horario de la escuela restaurado. Guarda para aplicarlo.'); };
 $('#bExport').onclick = () => {
-  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas, semillas:{personal:true}};
+  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado, propuestas:S.propuestas, semillas:{personal:true, porGrado:true}};
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
   a.download = `horarios-respaldo-${new Date().toISOString().slice(0,10)}.json`; a.click();
