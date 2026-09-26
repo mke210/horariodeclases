@@ -85,8 +85,9 @@ table.list{width:100%;border-collapse:collapse;font-size:.95rem}
 .msgs{margin:8px 0 0;padding-left:18px;font-size:.9rem}
 .krow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dotted var(--linea)}
 .pill{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--linea);border-radius:99px;padding:5px 12px;font-weight:700;cursor:pointer}
-.pill:has(input:checked){background:var(--tinta);color:#fff;border-color:var(--tinta)}
-.pill:has(input:checked) small{color:#cfd6e6}
+.pill.on{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+.pill.on small{color:#cfd6e6}
+.kgr{font-weight:700;min-width:28px}
 .pill small{font-weight:400;color:var(--suave);font-size:.75rem}
 .dchk{display:flex;flex-wrap:wrap;gap:8px}
 .note{padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:.95rem}
@@ -294,6 +295,7 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
       <label>Abreviatura<small>opcional, ej. FCYE</small><input id="aAbrev"></label>
       <label>Veces por semana<input id="aHoras" type="number" min="1" max="20" value="5"></label>
       <label>Máximo de horas por día<input id="aMaxDia" type="number" min="1" max="5" value="1"></label>
+      <label>Días con esas horas juntas<small>por semana, si el máximo es 2 o más</small><input id="aDobles" type="number" min="0" max="5" value="1"></label>
       <label>Color en el horario<input id="aColor" type="color" value="#2F6FB5"></label>
     </div>
     <div class="acts">
@@ -335,7 +337,8 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     </div>
     <h3 style="margin-top:16px">Grupos</h3>
     <div id="kGrupos"></div>
-    <div class="acts"><button class="btn pri" id="kAdd">Asignar</button><span id="kInfo" class="hint" style="margin:0"></span></div>
+    <p id="kGruposSel" class="hint" style="margin:8px 0 0"></p>
+    <div class="acts"><button class="btn pri" id="kAdd">Asignar</button><span id="kInfo" class="hint" style="margin:0;flex:1;min-width:240px"></span></div>
   </div>
   <div class="panel" id="bPanel">
     <h3>Bloques de talleres (Tecnología)</h3>
@@ -344,11 +347,13 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
       <label>Nombre<input id="bNombre" value="TECNOLOGÍA"></label>
       <label>Horas por semana<input id="bHoras" type="number" min="1" max="10" value="3"></label>
       <label>Máximo de horas por día<input id="bMaxDia" type="number" min="1" max="5" value="2"></label>
+      <label>Días con esas horas juntas<small>por semana</small><input id="bDobles" type="number" min="0" max="5" value="1"></label>
       <label>Color en la hoja de talleres<input id="bColor" type="color" value="#A9C5E8"></label>
     </div>
     <div class="acts"><label class="chk"><input type="checkbox" id="bDoble" checked>Si hay dos horas el mismo día, van seguidas</label></div>
     <h3 style="margin-top:16px">Grupos que forman el bloque</h3>
     <div id="bGrupos"></div>
+    <p id="bGruposSel" class="hint" style="margin:8px 0 0"></p>
     <h3 style="margin-top:16px">Talleres</h3>
     <div id="bTalleres"></div>
     <div class="acts">
@@ -460,7 +465,8 @@ const MOT = {
   doble:'la asignatura debe ir en módulos seguidos ese día',
   maxmaestro:'el maestro llegó a su máximo de clases del día',
   regla:'una condicionante lo impide',
-  bloqueTurno:'los grupos del bloque son de turnos distintos'
+  bloqueTurno:'los grupos del bloque son de turnos distintos',
+  maxdobles:'la asignatura ya tiene sus días de horas seguidas'
 };
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -492,6 +498,9 @@ function bloqueEtiqueta(b, o=''){
 const aliasDe = m => (m?.alias || String(m?.nombre||'').split(' ')[0] || '').toUpperCase();
 const subCorto = s => (s?.abrev || s?.nombre || '?').toUpperCase();
 const subLargo = s => s ? s.nombre.toUpperCase() + (s.abrev ? ` (${s.abrev.toUpperCase()})` : '') : '?';
+const maxDobles = c => (+c?.maxDia||1) < 2 ? 0 : (c.maxDobles!=null && c.maxDobles!=='' ? +c.maxDobles : 1);
+const capSemana = c => 5 + Math.min(5, maxDobles(c)) * ((+c?.maxDia||1) - 1);
+const textoCap = c => (+c?.maxDia||1) < 2 ? 'máximo 1 por día' : `máximo ${c.maxDia} por día en ${maxDobles(c)} día(s) de la semana`;
 const libresDe = m => m.libres ? (+m.numLibres || 3) : 0;
 const gruposOrden = () => Object.entries(S.grupos).sort((a,b) => (a[1].grado-b[1].grado) || cmp(a[1].grupo,b[1].grupo));
 const maestrosOrden = () => Object.entries(S.maestros).sort((a,b) => cmp(a[1].nombre,b[1].nombre));
@@ -749,7 +758,7 @@ function aplicarPersonal(){
 /* ===================== ASIGNATURAS ===================== */
 let editA = null;
 function resetA(){
-  editA=null; $('#aNombre').value=''; $('#aAbrev').value=''; $('#aHoras').value=5; $('#aMaxDia').value=1; $('#aDoble').checked=false;
+  editA=null; $('#aNombre').value=''; $('#aAbrev').value=''; $('#aDobles').value=1; $('#aHoras').value=5; $('#aMaxDia').value=1; $('#aDoble').checked=false;
   $('#aColor').value = PALETA[Object.keys(S.asignaturas).length % PALETA.length];
   $('#aSave').textContent='Agregar asignatura'; $('#aCancel').hidden=true;
 }
@@ -758,17 +767,18 @@ function saveA(){
   if (!nombre) return toast('Escribe el nombre de la asignatura.','err');
   if (!(horas>0)) return toast('Indica cuántas veces por semana se imparte.','err');
   if (!(maxDia>0)) return toast('El máximo por día debe ser al menos 1.','err');
-  if (horas > maxDia*5) return toast(`${horas} horas no caben en 5 días con máximo ${maxDia} por día.`,'err');
+  const capA = {maxDia, maxDobles:+$('#aDobles').value};
+  if (horas > capSemana(capA)) return toast(`${horas} horas no caben en la semana con ${textoCap(capA)}.`,'err');
   const dup = Object.entries(S.asignaturas).find(([id,a]) => id!==editA && cmp(a.nombre,nombre)===0);
   if (dup) return toast('Ya existe una asignatura con ese nombre.','err');
   const id = editA || newId(), eraEdit = !!editA;
-  db.ref(`${ROOT}/asignaturas/${id}`).set({nombre, abrev:$('#aAbrev').value.trim().toUpperCase(), horasSemana:horas, maxDia, doble:$('#aDoble').checked, color:$('#aColor').value})
+  db.ref(`${ROOT}/asignaturas/${id}`).set({nombre, abrev:$('#aAbrev').value.trim().toUpperCase(), horasSemana:horas, maxDia, maxDobles:+$('#aDobles').value||0, doble:$('#aDoble').checked, color:$('#aColor').value})
     .then(() => { toast(eraEdit?'Asignatura actualizada.':'Asignatura agregada.'); resetA(); });
 }
 function editarA(id){
   const a=S.asignaturas[id]; if (!a) return; editA=id;
   $('#aNombre').value=a.nombre; $('#aAbrev').value=a.abrev||''; $('#aHoras').value=a.horasSemana; $('#aMaxDia').value=a.maxDia||1;
-  $('#aDoble').checked=!!a.doble; $('#aColor').value=a.color||PALETA[0];
+  $('#aDoble').checked=!!a.doble; $('#aDobles').value=maxDobles({...a, maxDia:Math.max(2,+a.maxDia||1)}); $('#aColor').value=a.color||PALETA[0];
   $('#aSave').textContent='Guardar cambios'; $('#aCancel').hidden=false;
   $('#v-asignaturas').scrollIntoView({behavior:'smooth'});
 }
@@ -795,10 +805,10 @@ function seedA(){
 function renderAsignaturas(){
   const rows = asigOrden();
   if (!rows.length){ $('#aList').innerHTML='<p class="empty">Aún no hay asignaturas. Agrégalas una por una o carga las de ejemplo.</p>'; return; }
-  let h = '<div class="wrap"><table class="list"><thead><tr><th>Asignatura</th><th>Por semana</th><th>Máx. por día</th><th>Bloque doble</th><th>Grupos</th><th></th></tr></thead><tbody>';
+  let h = '<div class="wrap"><table class="list"><thead><tr><th>Asignatura</th><th>Por semana</th><th>Máx. por día</th><th>Días con horas juntas</th><th>Grupos</th><th></th></tr></thead><tbody>';
   rows.forEach(([id,a]) => {
     const ng = Object.values(S.asignaciones).filter(x => x.asignaturaId===id).length;
-    h += `<tr><td><span class="sw" style="background:${esc(a.color)}"></span><b>${esc(a.nombre)}</b>${a.abrev?` <small class="hint">(${esc(a.abrev)})</small>`:''}</td><td>${a.horasSemana}</td><td>${a.maxDia||1}</td><td>${a.doble?'Sí':'No'}</td><td>${ng}</td>
+    h += `<tr><td><span class="sw" style="background:${esc(a.color)}"></span><b>${esc(a.nombre)}</b>${a.abrev?` <small class="hint">(${esc(a.abrev)})</small>`:''}</td><td>${a.horasSemana}</td><td>${a.maxDia||1}</td><td>${(+a.maxDia||1)>1 ? `${a.maxDia} ${a.doble?'seguidas':'horas'}, ${maxDobles(a)} día(s)` : 'No'}</td><td>${ng}</td>
       <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
   });
   $('#aList').innerHTML = h + '</tbody></table></div>';
@@ -864,15 +874,31 @@ function renderChips(cont, forzar){
   gruposOrden().forEach(([id,g]) => (porGrado[g.grado] ??= []).push([id,g]));
   let h = '';
   Object.keys(porGrado).forEach(gr => {
-    h += `<div class="krow"><button type="button" class="btn sm" data-grado="${gr}">${gr}° grado</button>` +
-      porGrado[gr].map(([id,g]) => `<label class="pill"><input type="checkbox" value="${id}" ${marcados.has(id)?'checked':''} hidden>${esc(g.grupo)}<small>${g.turno==='mixto'?'Mixto':'Mat.'}</small></label>`).join('') + '</div>';
+    h += `<div class="krow"><span class="kgr">${gr}°</span>` +
+      porGrado[gr].map(([id,g]) => `<label class="pill${marcados.has(id)?' on':''}"><input type="checkbox" value="${id}" ${marcados.has(id)?'checked':''} hidden>${esc(g.grupo)}<small>${g.turno==='mixto'?'Mixto':'Mat.'}</small></label>`).join('') +
+      `<button type="button" class="btn sm" data-grado="${gr}">Todos los de ${gr}°</button></div>`;
   });
   el.innerHTML = h || '<p class="empty">Primero registra grupos en el paso 4.</p>';
+  marcarChips(cont);
+}
+// Refleja la selección en pantalla y actualiza el resumen
+function marcarChips(cont){
+  const el = $('#'+cont);
+  el.querySelectorAll('.pill').forEach(p => p.classList.toggle('on', p.querySelector('input').checked));
+  el.querySelectorAll('[data-grado]').forEach(b => { const ins = [...b.parentElement.querySelectorAll('input')]; const todos = ins.length && ins.every(i => i.checked); b.textContent = todos ? `Quitar ${b.dataset.grado}°` : `Todos los de ${b.dataset.grado}°`; });
+  const sel = [...el.querySelectorAll('input:checked')].map(i => gName(S.grupos[i.value]));
+  const res = $('#'+cont+'Sel'); if (res) res.textContent = sel.length ? `Grupos elegidos (${sel.length}): ${sel.join(', ')}` : 'Ningún grupo elegido.';
+  if (cont==='kGrupos') kInfo();
 }
 function kInfo(){
   const mid=$('#kMaestro').value, sid=$('#kAsig').value, s=S.asignaturas[sid], m=S.maestros[mid];
   $('#kHoras').placeholder = s ? `${s.horasSemana} (de la asignatura)` : '';
-  if (m){ const fg=horasMaestro(mid), lib=libresDe(m); $('#kInfo').textContent = `${m.nombre} lleva ${fg} h frente a grupo${lib?` + ${lib} libres`:''} de ${m.horasContrato} h.`; }
+  if (m){
+    const fg=horasMaestro(mid), lib=libresDe(m), n=$$('#kGrupos input:checked').length, hs=(+$('#kHoras').value||+s?.horasSemana||0);
+    let t = `${m.nombre} lleva ${fg} h frente a grupo${lib?` + ${lib} libres`:''} de ${m.horasContrato} h.`;
+    if (n && hs){ const nuevo = fg+lib+n*hs; t += ` Con esta asignación quedaría en ${nuevo} h (${n} grupo${n>1?'s':''} × ${hs} h)${nuevo>+m.horasContrato?', más de sus horas de trabajo':''}.`; }
+    $('#kInfo').textContent = t;
+  }
   else $('#kInfo').textContent = '';
 }
 function addCarga(){
@@ -883,7 +909,7 @@ function addCarga(){
   if (!gids.length) return toast('Marca al menos un grupo.','err');
   const m = S.maestros[mid], s = S.asignaturas[sid];
   const h = horas || s.horasSemana;
-  if (h > (s.maxDia||1)*5) return toast(`${h} horas no caben en la semana con máximo ${s.maxDia||1} por día. Ajusta el máximo en Asignaturas.`,'err');
+  if (h > capSemana(s)) return toast(`${h} horas no caben en la semana con ${textoCap(s)}. Ajústalo en Asignaturas.`,'err');
   const u = {}; let n = 0; const avisos = [];
   for (const gid of gids){
     const g = S.grupos[gid];
@@ -895,7 +921,7 @@ function addCarga(){
   if (!n) return toast(avisos.join('. ')+'.','err');
   db.ref().update(u).then(() => {
     toast(`Se asignaron ${n} grupo(s).${avisos.length?' Omitidos: '+avisos.join('; ')+'.':''}`, avisos.length?'err':'ok');
-    $$('#kGrupos input:checked').forEach(i => i.checked=false);
+    $$('#kGrupos input:checked').forEach(i => i.checked=false); marcarChips('kGrupos');
   });
 }
 function renderCarga(){
@@ -927,7 +953,7 @@ function renderTalleresForm(){
     <button type="button" class="btn sm del" data-quitar="${i}">Quitar</button></div>`).join('') || '<p class="empty">Agrega al menos un taller.</p>';
 }
 function resetB(){
-  editB = null; $('#bNombre').value = 'TECNOLOGÍA'; $('#bHoras').value = 3; $('#bMaxDia').value = 2; $('#bDoble').checked = true;
+  editB = null; $('#bNombre').value = 'TECNOLOGÍA'; $('#bHoras').value = 3; $('#bMaxDia').value = 2; $('#bDobles').value = 1; $('#bDoble').checked = true;
   $('#bColor').value = ['#A9C5E8','#BDBDBD','#F2C9EC','#DCE9F7','#8ED8F0','#FFE0D0','#FFFF66','#FFC000','#F0A080'][bloquesDe().length % 9];
   talleresForm = [{mid:'',tal:''}];
   renderChips('bGrupos', new Set()); renderTalleresForm();
@@ -939,7 +965,8 @@ function saveB(){
   if (!gids.length) return toast('Marca los grupos que forman el bloque.','err');
   if (new Set(gids.map(g => S.grupos[g].turno)).size > 1) return toast('Los grupos de un bloque deben ser del mismo turno.','err');
   if (!(horas>0)) return toast('Indica las horas por semana del bloque.','err');
-  if (horas > maxDia*5) return toast(`${horas} horas no caben en la semana con máximo ${maxDia} por día.`,'err');
+  const capB = {maxDia, maxDobles:+$('#bDobles').value};
+  if (horas > capSemana(capB)) return toast(`${horas} horas no caben en la semana con ${textoCap(capB)}.`,'err');
   const tal = {};
   for (const t of talleresForm){
     if (!t.mid) continue;
@@ -947,14 +974,14 @@ function saveB(){
     tal[t.mid] = (t.tal||'').trim().toUpperCase() || nombre;
   }
   if (!Object.keys(tal).length) return toast('Agrega al menos un maestro de taller.','err');
-  const data = {nombre, horas, maxDia, doble:$('#bDoble').checked, color:$('#bColor').value,
+  const data = {nombre, horas, maxDia, maxDobles:+$('#bDobles').value||0, doble:$('#bDoble').checked, color:$('#bColor').value,
     grupos:Object.fromEntries(gids.map(g => [g,true])), talleres:tal};
   const id = editB || newId(), era = !!editB;
   db.ref(`${ROOT}/bloques/${id}`).set(data).then(() => { toast(era ? 'Bloque actualizado.' : 'Bloque agregado.'); resetB(); });
 }
 function editarB(id){
   const b = S.bloques[id]; if (!b) return; editB = id;
-  $('#bNombre').value = b.nombre; $('#bHoras').value = b.horas; $('#bMaxDia').value = b.maxDia||1; $('#bDoble').checked = !!b.doble; $('#bColor').value = b.color||'#A9C5E8';
+  $('#bNombre').value = b.nombre; $('#bHoras').value = b.horas; $('#bMaxDia').value = b.maxDia||1; $('#bDobles').value = maxDobles({...b, maxDia:Math.max(2,+b.maxDia||1)}); $('#bDoble').checked = !!b.doble; $('#bColor').value = b.color||'#A9C5E8';
   talleresForm = Object.entries(b.talleres||{}).map(([mid,tal]) => ({mid,tal}));
   renderChips('bGrupos', new Set(Object.keys(b.grupos||{}))); renderTalleresForm();
   $('#bSave').textContent = 'Guardar cambios'; $('#bCancel').hidden = false;
@@ -1056,6 +1083,7 @@ function makeEngine(){
     }
     const c = conf(L), ya = sd(L)[d];
     if (ya.length >= (+c.maxDia||1)) return 'maxdia';
+    if (ya.length === 1 && sd(L).filter((x,i) => i!==d && x.length>=2).length >= maxDobles(c)) return 'maxdobles';
     if (c.doble && ya.length){
       const ok = ya.some(n => { const o = g0.slots[n-1]; return o && (o.fin===s.ini || s.fin===o.ini); });
       if (!ok) return 'doble';
@@ -1291,7 +1319,7 @@ function diagnostico(){
   asigValidas().forEach(([,a]) => {
     const s = S.asignaturas[a.asignaturaId], g = S.grupos[a.grupoId], m = S.maestros[a.maestroId], h = horasDe(a);
     if (m.turnos && m.turnos[g.turno]===false) err.push(`${m.nombre} tiene ${s.nombre} en ${gName(g)}, pero no trabaja en el turno ${nomTurno(g.turno).toLowerCase()}.`);
-    if (h > (s.maxDia||1)*5) err.push(`${s.nombre} en ${gName(g)}: ${h} horas no caben con máximo ${s.maxDia||1} por día.`);
+    if (h > capSemana(s)) err.push(`${s.nombre} en ${gName(g)}: ${h} horas no caben con ${textoCap(s)}.`);
     const k = a.grupoId+'|'+a.asignaturaId;
     if (vistos[k]) av.push(`${gName(g)} tiene ${s.nombre} asignada a más de un maestro.`); vistos[k] = true;
   });
@@ -1301,7 +1329,7 @@ function diagnostico(){
     const t0 = S.grupos[L.gids[0]].turno;
     if (L.gids.some(g => S.grupos[g].turno !== t0)) err.push(`${nom}: sus grupos son de turnos distintos.`);
     if (!L.mids.length) av.push(`${nom} no tiene maestros de taller.`);
-    if (+b.horas > (+b.maxDia||1)*5) err.push(`${nom}: ${b.horas} horas no caben con máximo ${b.maxDia||1} por día.`);
+    if (+b.horas > capSemana(b)) err.push(`${nom}: ${b.horas} horas no caben con ${textoCap(b)}.`);
     L.mids.forEach(mid => { const m = S.maestros[mid]; if (m.turnos && m.turnos[t0]===false) err.push(`${m.nombre} tiene taller en ${nom}, pero no trabaja en el turno ${nomTurno(t0).toLowerCase()}.`); });
   });
   return {err, av};
@@ -1721,11 +1749,13 @@ $('#gList').onchange = e => { const s = e.target.closest('[data-turno]'); if (!s
 $('#kMaestro').onchange = kInfo; $('#kAsig').onchange = kInfo; $('#kAdd').onclick = addCarga;
 $('#kFiltro').onchange = renderCarga;
 $('#kGrupos').onclick = e => { const b = e.target.closest('[data-grado]'); if (!b) return;
-  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); };
+  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); marcarChips('kGrupos'); };
+$('#kGrupos').addEventListener('change', () => marcarChips('kGrupos'));
+$('#kHoras').addEventListener('input', kInfo);
 $('#kList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/asignaciones/${d.dataset.del}`).remove().then(() => toast('Asignación quitada.')); };
 $('#kList').onchange = e => { const i = e.target.closest('[data-hor]'); if (!i) return;
   const v = +i.value, a = S.asignaciones[i.dataset.hor], s = S.asignaturas[a?.asignaturaId];
-  if (v && s && v > (s.maxDia||1)*5){ toast(`${v} horas no caben con máximo ${s.maxDia||1} por día.`,'err'); i.value = a.horas||''; return; }
+  if (v && s && v > capSemana(s)){ toast(`${v} horas no caben con ${textoCap(s)}.`,'err'); i.value = a.horas||''; return; }
   db.ref(`${ROOT}/asignaciones/${i.dataset.hor}/horas`).set(v>0 ? v : null).then(() => toast('Horas actualizadas.')); };
 
 $('#rTipo').onchange = renderReglaForm; $('#rCond').onchange = renderReglaForm; $('#rAdd').onclick = addRegla;
@@ -1750,7 +1780,8 @@ $('#bTalleres').addEventListener('input', e => { const i = e.target.dataset.ti; 
 $('#bTalleres').addEventListener('change', e => { const i = e.target.dataset.ti; if (i==null) return; talleresForm[+i][e.target.dataset.f] = e.target.value; });
 $('#bTalleres').onclick = e => { const q = e.target.closest('[data-quitar]'); if (!q) return; talleresForm.splice(+q.dataset.quitar,1); renderTalleresForm(); };
 $('#bGrupos').onclick = e => { const b = e.target.closest('[data-grado]'); if (!b) return;
-  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); };
+  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); marcarChips('bGrupos'); };
+$('#bGrupos').addEventListener('change', () => marcarChips('bGrupos'));
 $('#bSave').onclick = saveB; $('#bCancel').onclick = resetB;
 $('#bList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]');
   if (a) editarB(a.dataset.edit);
