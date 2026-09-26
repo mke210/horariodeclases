@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de Horarios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --tinta:#1B2A4A; --tinta2:#2C3E66; --papel:#F3F5F9; --linea:#D5DBE5;
+  --oro:#B8901C; --oro2:#F5EBC8; --ok:#2E7D5B; --mal:#B3362B; --aviso:#8A5F00; --suave:#5B6780;
+  font-family:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papel);color:var(--tinta);font-size:16px;line-height:1.45}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;height:60px;background:var(--tinta);color:#fff;padding:0 18px;border-bottom:3px solid var(--oro)}
+.brand{min-width:0}
+.brand h1{margin:0;font-size:1.15rem}
+.brand span{display:block;font-size:.84rem;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conn{margin-left:auto;font-size:.8rem;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
+.conn::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#aaa;margin-right:6px}
+.conn.on::before{background:#5BD08F}.conn.off::before{background:#F07167}
+#navBtn{display:none;background:none;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;font-size:1.2rem;padding:4px 10px;cursor:pointer}
+.layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 60px)}
+nav{background:#fff;border-right:1px solid var(--linea);padding:16px 10px;position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto}
+nav button{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px;font:inherit;color:var(--tinta);cursor:pointer;margin-bottom:2px}
+nav button:hover{background:var(--papel)}
+nav .num{width:26px;height:26px;border-radius:50%;border:2px solid var(--linea);display:grid;place-items:center;font-size:.8rem;font-weight:700}
+nav button.done .num{background:var(--ok);border-color:var(--ok);color:#fff}
+nav button.on{background:var(--oro2)}
+nav button.on .num{border-color:var(--oro)}
+nav .cnt{font-size:.8rem;color:var(--suave)}
+nav hr{border:0;border-top:1px solid var(--linea);margin:10px 6px}
+main{padding:24px clamp(14px,3vw,36px) 60px;min-width:0}
+.view{display:none;max-width:1150px}.view.on{display:block}
+h2{font-size:1.6rem;margin:0 0 4px}
+h3{margin:0 0 12px;font-size:1.05rem}
+.lead{color:var(--suave);margin:0 0 18px;max-width:72ch}
+.panel{background:#fff;border:1px solid var(--linea);border-radius:10px;padding:18px;margin-bottom:18px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px}
+label{display:flex;flex-direction:column;gap:4px;font-size:.88rem;font-weight:700}
+label small{font-weight:400;color:var(--suave)}
+input,select{font:inherit;font-weight:400;padding:9px 10px;border:1px solid var(--linea);border-radius:8px;background:#fff;color:var(--tinta);min-width:0}
+input[type=color]{padding:2px;height:42px}
+input:focus-visible,select:focus-visible,button:focus-visible,td:focus-visible{outline:3px solid var(--oro);outline-offset:1px}
+label.chk{flex-direction:row;align-items:center;gap:8px;font-weight:400}
+label.chk input{width:18px;height:18px}
+fieldset{border:1px solid var(--linea);border-radius:10px;padding:12px 14px;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+legend{font-weight:700;padding:0 6px}
+.turnos{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:16px}
+.btn{font:inherit;font-weight:700;padding:9px 16px;border-radius:8px;border:1px solid var(--linea);background:#fff;color:var(--tinta);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--tinta2)}
+.btn.pri{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+.btn.pri:hover{background:var(--tinta2)}
+.btn.gold{background:var(--oro);border-color:var(--oro);color:#fff}
+.btn.sm{padding:5px 10px;font-size:.85rem}
+.btn.del{color:var(--mal)}
+.btn:disabled{opacity:.5;cursor:wait}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+.wrap{overflow-x:auto}
+table.list{width:100%;border-collapse:collapse;font-size:.95rem}
+.list th,.list td{padding:9px 10px;border-bottom:1px solid var(--linea);text-align:left;vertical-align:middle}
+.list th{font-size:.82rem;color:var(--suave);font-weight:700}
+.list td.ra{text-align:right;white-space:nowrap}
+.hin{width:72px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:8px}
+.empty{color:var(--suave);padding:8px 0;margin:0}
+.carga{display:flex;flex-direction:column;gap:4px;min-width:190px;font-size:.85rem}
+.bar{height:8px;background:var(--papel);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--tinta2);border-radius:99px}
+.carga.ok .bar i{background:var(--ok)}.carga.bad .bar i{background:var(--mal)}.carga.bad span{color:var(--mal);font-weight:700}
+.bar.big{height:12px;margin:10px 0 6px}
+.bar.big i{background:var(--oro);transition:width .15s}
+.tcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.tcard{background:#fff;border:1px solid var(--linea);border-left:6px solid var(--ok);border-radius:10px;padding:16px}
+.tcard.warn{border-left-color:var(--oro)}.tcard.bad{border-left-color:var(--mal)}
+.tcard .st{font-weight:700;margin:0 0 10px}
+.tcard.ok .st{color:var(--ok)}.tcard.warn .st{color:var(--aviso)}.tcard.bad .st{color:var(--mal)}
+.tcard ol{list-style:none;padding:0;margin:0;font-size:.9rem}
+.tcard li{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted var(--linea)}
+.tcard li.rc{color:#6b5410;font-weight:700;background:var(--oro2);padding:4px 8px;border-radius:6px;border:0;margin:3px 0}
+.msgs{margin:8px 0 0;padding-left:18px;font-size:.9rem}
+.krow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dotted var(--linea)}
+.pill{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--linea);border-radius:99px;padding:5px 12px;font-weight:700;cursor:pointer}
+.pill:has(input:checked){background:var(--tinta);color:#fff;border-color:var(--tinta)}
+.pill:has(input:checked) small{color:#cfd6e6}
+.pill small{font-weight:400;color:var(--suave);font-size:.75rem}
+.dchk{display:flex;flex-wrap:wrap;gap:8px}
+.note{padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:.95rem}
+.note.warn{background:var(--oro2);color:#5c4508}
+.note.bad{background:#F8E1DE;color:#7d231b}
+.note.ok{background:#DDF0E6;color:#1d5a40}
+.diag h3{display:flex;gap:8px;align-items:center}
+.diag ul{margin:0;padding-left:20px;max-height:280px;overflow:auto}
+.diag li{margin:4px 0}
+.diag .e li::marker{color:var(--mal)}
+.diag .a li::marker{color:var(--oro)}
+.stats{display:flex;flex-wrap:wrap;gap:24px;margin-bottom:6px}
+.stats div{font-size:.9rem;color:var(--suave)}
+.stats b{display:block;font-size:1.5rem;color:var(--tinta)}
+.tabs{display:inline-flex;border:1px solid var(--linea);border-radius:10px;overflow:hidden;background:#fff}
+.tabs button{font:inherit;font-weight:700;border:0;background:none;padding:9px 16px;cursor:pointer;color:var(--suave)}
+.tabs button.on{background:var(--tinta);color:#fff}
+.hbar{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:14px}
+.hbar select{min-width:220px}
+.hint{font-size:.88rem;color:var(--suave);margin:8px 0 0}
+/* Horario */
+table.tt{width:100%;border-collapse:separate;border-spacing:4px;min-width:660px;table-layout:fixed}
+.tt thead th{background:var(--tinta);color:#fff;padding:8px;border-radius:6px;font-size:.9rem}
+.tt th.hcol{width:96px;text-align:left;font-size:.86rem;color:var(--tinta);font-weight:700;padding:4px 6px;white-space:nowrap}
+.tt thead th.hcol{background:transparent;color:var(--suave)}
+.tt th.hcol small{display:block;color:var(--suave);font-weight:400;padding-left:26px}
+.tt .mn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--tinta);color:#fff;font-size:.7rem;margin-right:6px}
+.tt td{height:60px;border-radius:6px;background:#fff;border:1px dashed var(--linea);padding:0;vertical-align:top;overflow:hidden}
+.tt td.cl{border:0;border-left:5px solid var(--c);background:color-mix(in srgb,var(--c) 15%,#fff)}
+.chip{padding:6px 8px;font-size:.84rem;line-height:1.25}
+.chip b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip span{color:var(--suave);font-size:.78rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tt td.libre{background:repeating-linear-gradient(135deg,#fff 0 6px,var(--oro2) 6px 9px);border:1px solid var(--oro)}
+.tt td.libre .chip b{color:#6b5410}
+.tt td.bloq{background:repeating-linear-gradient(45deg,#f2f3f6 0 5px,#e2e6ec 5px 7px);border:0}
+.tt tr.rec td{height:auto;background:var(--oro2);border:0;text-align:center;font-weight:700;padding:6px;color:#6b5410}
+.tt td.pick{cursor:pointer}
+.tt td.pick:hover{box-shadow:inset 0 0 0 2px var(--tinta2)}
+.tt td.sel{box-shadow:inset 0 0 0 3px var(--oro)}
+.tt.mini td{height:38px}
+.tt.mini .bq{width:100%;height:100%;border:0;background:none;font:inherit;font-size:.75rem;color:var(--suave);cursor:pointer}
+.tt.mini td.bloq .bq{color:var(--tinta);font-weight:700}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--tinta);color:#fff;padding:12px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:99;max-width:min(560px,92vw);font-size:.95rem}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{background:var(--mal)}
+#printArea{display:none}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  #navBtn{display:block}
+  nav{position:fixed;top:60px;left:0;bottom:0;width:270px;height:auto;z-index:35;transform:translateX(-105%);transition:transform .2s;box-shadow:4px 0 24px rgba(27,42,74,.18)}
+  nav.open{transform:none}
+  .conn{font-size:0;padding:6px}.conn::before{margin:0}
+}
+@media (prefers-reduced-motion:reduce){nav,#toast,.bar.big i{transition:none}}
+/* Hojas de horario */
+.preview{background:#DDE2EA;border-radius:10px;padding:12px;overflow:auto;min-height:200px}
+.hoja{background:#fff;width:8.5in;min-height:11in;margin:0 auto 18px;padding:.45in .4in;box-shadow:0 2px 10px rgba(27,42,74,.2);color:#222;font-family:'Century Gothic','Avenir Next','Atkinson Hyperlegible',system-ui,sans-serif}
+.hoja.land{width:11in;min-height:8.5in}
+.h-cap{text-align:center;font-style:italic;color:#555;font-size:13pt;margin:.35in 0 10px}
+table.ht{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt}
+.ht th,.ht td{border:1px solid #9a9a9a}
+.ht .ht-title{background:#f3f3f3;color:#1a8a8f;font-size:13pt;font-weight:400;padding:6px}
+.ht .ht-d{color:#1a8a8f;font-weight:400;padding:4px;background:#fff}
+.ht .ht-h{width:.6in;color:#1a8a8f;font-weight:400;font-size:8.5pt;text-align:right;padding:2px 5px;background:#fff;line-height:1.15}
+.ht .ht-n{width:.3in;font-weight:700;background:#fff}
+.ht td{height:.6in;vertical-align:middle;padding:2px 4px;background:#FFFDF0;overflow:hidden}
+.ht td.cs{background:color-mix(in srgb,var(--c) 82%,#fff)}
+.ht td.cs b{display:block;font-weight:400;font-size:10.5pt;line-height:1.1}
+.ht td.cs span{display:block;font-size:7.5pt;line-height:1.2}
+.ht.centro td{text-align:center}
+.ht td.mid{font-size:9.5pt}
+.ht td.blk{background:#fff;text-align:center}
+.ht td.blk .big{font-size:12pt;letter-spacing:.02em;overflow-wrap:anywhere}
+.ht td.libre{background:repeating-linear-gradient(135deg,#fff 0 6px,#EFE6C6 6px 9px)}
+.ht td.libre b{font-weight:400;font-size:8.5pt;color:#6b5410}
+.ht tr.ht-rec td{text-align:center;color:#1a8a8f;height:.34in;background:#FFFDF0}
+.ht td.pick{cursor:pointer}
+.ht td.pick:hover{box-shadow:inset 0 0 0 2px var(--tinta2)}
+.ht td.sel{box-shadow:inset 0 0 0 3px var(--oro)}
+.land .ht td{height:.46in}
+table.hr{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5pt;text-align:center}
+.hr td{border:1px solid #9a9a9a;padding:1px 4px;background:#FFFDF0}
+.hr col.c1{width:.6in}
+.hr td.nb{border:0;background:none}
+.hr .lect{color:#1a8a8f;border-top:0}
+.hr tr.hh td{color:#1a8a8f;font-size:9.5pt}
+.hr tr.hh td.pt{font-size:5.5pt;color:#555}
+.hr td.cc{background:color-mix(in srgb,var(--c) 82%,#fff)}
+table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-family:Arial,sans-serif}
+.htal td{border:1px solid #444;padding:1px 8px;min-width:.9in}
+.bn .ht td.cs,.bn .hr td.cc{background:#fff}
+@media print{
+  body{background:#fff}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:letter portrait;margin:8mm}
+  @page horizontal{size:letter landscape;margin:8mm}
+  .hoja{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;zoom:1!important;break-after:page;page-break-after:always}
+  .hoja:last-child{break-after:auto;page-break-after:auto}
+  .hoja.land{page:horizontal;width:10.3in;min-height:0}
+  .hoja:not(.land){width:7.8in}
+  .hoja .h-cap{margin-top:.15in}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button id="navBtn" aria-label="Abrir menú">☰</button>
+  <div class="brand"><h1>Generador de horarios</h1><span id="hdrEscuela">Cargando datos…</span></div>
+  <span id="conn" class="conn">Conectando</span>
+</header>
+
+<div class="layout">
+<nav id="nav" aria-label="Pasos">
+  <button data-v="config" class="on"><span class="num">1</span>Turnos y módulos<span class="cnt" id="n-config"></span></button>
+  <button data-v="maestros"><span class="num">2</span>Maestros<span class="cnt" id="n-maestros"></span></button>
+  <button data-v="asignaturas"><span class="num">3</span>Asignaturas<span class="cnt" id="n-asignaturas"></span></button>
+  <button data-v="grupos"><span class="num">4</span>Grupos<span class="cnt" id="n-grupos"></span></button>
+  <button data-v="carga"><span class="num">5</span>Carga académica<span class="cnt" id="n-carga"></span></button>
+  <button data-v="reglas"><span class="num">6</span>Condicionantes<span class="cnt" id="n-reglas"></span></button>
+  <hr>
+  <button data-v="generar"><span class="num">7</span>Generar horario<span class="cnt" id="n-generar"></span></button>
+  <button data-v="horarios"><span class="num">8</span>Vista previa<span class="cnt"></span></button>
+</nav>
+
+<main>
+<!-- 1 CONFIG -->
+<section class="view on" id="v-config">
+  <h2>Turnos y módulos</h2>
+  <p class="lead">Define entrada, salida, receso y duración de cada módulo. Abajo ves los módulos que resultan en cada turno y si el horario cuadra con la salida.</p>
+  <div class="panel">
+    <div class="fgrid">
+      <label>Escuela<input id="cEscuela" placeholder="Nombre de la escuela"></label>
+      <label>Ciclo escolar<input id="cCiclo" placeholder="2026-2027"></label>
+      <label>Duración del módulo<small>minutos</small><input id="cDur" type="number" min="20" max="120"></label>
+      <label>Inicio del receso<input id="cRI" type="time"></label>
+      <label>Fin del receso<input id="cRF" type="time"></label>
+    </div>
+    <div class="turnos">
+      <fieldset><legend>Turno matutino</legend>
+        <label>Entrada<input id="cMI" type="time"></label><label>Salida<input id="cMF" type="time"></label></fieldset>
+      <fieldset><legend>Turno mixto</legend>
+        <label>Entrada<input id="cXI" type="time"></label><label>Salida<input id="cXF" type="time"></label></fieldset>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="cSave">Guardar configuración</button>
+      <button class="btn" id="cReset">Restaurar horario de la escuela</button>
+    </div>
+  </div>
+  <div id="cValid" class="tcards"></div>
+  <div class="panel" style="margin-top:18px">
+    <h3>Respaldo</h3>
+    <p class="empty" style="margin-bottom:10px">Descarga todos los datos en un archivo o recupéralos desde uno anterior.</p>
+    <div class="acts" style="margin-top:0">
+      <button class="btn" id="bExport">Descargar respaldo</button>
+      <label class="btn" style="flex-direction:row">Importar respaldo<input type="file" id="bImport" accept=".json,application/json" hidden></label>
+    </div>
+  </div>
+</section>
+
+<!-- 2 MAESTROS -->
+<section class="view" id="v-maestros">
+  <h2>Maestros</h2>
+  <p class="lead">Registra a cada docente con sus horas de contrato por semana. Marca en la cuadrícula los módulos en que no puede dar clase (por ejemplo, porque trabaja en otra escuela).</p>
+  <div class="panel">
+    <div class="fgrid">
+      <label>Nombre completo<input id="mNombre" placeholder="Ej. Ana López Ruiz"></label>
+      <label>Nombre corto<small>aparece en el horario del grupo</small><input id="mAlias" placeholder="Ej. ANA"></label>
+      <label>Horas que trabaja<small>por semana</small><input id="mHoras" type="number" min="1" max="60"></label>
+      <label>Máximo de clases por día<small>opcional</small><input id="mMaxDia" type="number" min="1" max="10" placeholder="Sin límite"></label>
+    </div>
+    <div class="acts" style="gap:18px">
+      <label class="chk"><input type="checkbox" id="mTM" checked>Trabaja en turno matutino</label>
+      <label class="chk"><input type="checkbox" id="mTX" checked>Trabaja en turno mixto</label>
+      <label class="chk"><input type="checkbox" id="mLibres" checked>Asignar horas libres a la semana:</label>
+      <input id="mNumLibres" type="number" min="1" max="10" value="3" style="width:70px" aria-label="Número de horas libres">
+    </div>
+    <h3 style="margin-top:18px">Disponibilidad</h3>
+    <p class="hint" style="margin:-6px 0 10px">Toca un módulo para marcarlo como no disponible; tócalo otra vez para liberarlo.</p>
+    <div class="wrap" id="mBloq"></div>
+    <div class="acts">
+      <button class="btn pri" id="mSave">Agregar maestro</button>
+      <button class="btn" id="mBloqClear">Limpiar disponibilidad</button>
+      <button class="btn" id="mCancel" hidden>Cancelar edición</button>
+    </div>
+  </div>
+  <div class="panel"><h3>Maestros registrados</h3><div id="mList"></div></div>
+</section>
+
+<!-- 3 ASIGNATURAS -->
+<section class="view" id="v-asignaturas">
+  <h2>Asignaturas</h2>
+  <p class="lead">Indica cuántas veces por semana se imparte cada asignatura y cuántas horas puede tener en un mismo día. Si un grado lleva otra cantidad, la ajustas al asignarla en Carga académica.</p>
+  <div class="panel">
+    <div class="fgrid">
+      <label>Nombre<input id="aNombre" placeholder="Ej. Matemáticas"></label>
+      <label>Abreviatura<small>opcional, ej. FCYE</small><input id="aAbrev"></label>
+      <label>Veces por semana<input id="aHoras" type="number" min="1" max="20" value="5"></label>
+      <label>Máximo de horas por día<input id="aMaxDia" type="number" min="1" max="5" value="1"></label>
+      <label>Color en el horario<input id="aColor" type="color" value="#2F6FB5"></label>
+    </div>
+    <div class="acts">
+      <label class="chk"><input type="checkbox" id="aDoble">Si hay dos horas el mismo día, van seguidas (bloque doble)</label>
+    </div>
+    <div class="acts">
+      <button class="btn pri" id="aSave">Agregar asignatura</button>
+      <button class="btn" id="aCancel" hidden>Cancelar edición</button>
+      <button class="btn" id="aSeed">Cargar asignaturas de ejemplo</button>
+    </div>
+  </div>
+  <div class="panel"><h3>Asignaturas registradas</h3><div id="aList"></div></div>
+</section>
+
+<!-- 4 GRUPOS -->
+<section class="view" id="v-grupos">
+  <h2>Grupos</h2>
+  <p class="lead">Da de alta varios grupos a la vez: escribe una letra (A), una lista (A,B,C) o un rango (A-I).</p>
+  <div class="panel">
+    <div class="fgrid">
+      <label>Grado<select id="gGrado"><option value="1">1°</option><option value="2">2°</option><option value="3">3°</option></select></label>
+      <label>Grupos<input id="gLetras" placeholder="A-I"></label>
+      <label>Turno<select id="gTurno"><option value="matutino">Matutino</option><option value="mixto">Mixto</option></select></label>
+    </div>
+    <div class="acts"><button class="btn pri" id="gAdd">Agregar grupos</button></div>
+  </div>
+  <div class="panel"><h3>Grupos registrados</h3><div id="gList"></div></div>
+</section>
+
+<!-- 5 CARGA -->
+<section class="view" id="v-carga">
+  <h2>Carga académica</h2>
+  <p class="lead">Asigna a cada maestro sus asignaturas y grupos. Puedes marcar varios grupos a la vez; deja las horas en blanco para usar las de la asignatura.</p>
+  <div class="panel">
+    <div class="fgrid">
+      <label>Maestro<select id="kMaestro"></select></label>
+      <label>Asignatura<select id="kAsig"></select></label>
+      <label>Horas por semana<small>opcional</small><input id="kHoras" type="number" min="1" max="20"></label>
+    </div>
+    <h3 style="margin-top:16px">Grupos</h3>
+    <div id="kGrupos"></div>
+    <div class="acts"><button class="btn pri" id="kAdd">Asignar</button><span id="kInfo" class="hint" style="margin:0"></span></div>
+  </div>
+  <div class="panel" id="bPanel">
+    <h3>Bloques de talleres (Tecnología)</h3>
+    <p class="hint" style="margin:-6px 0 12px">Para asignaturas donde varios grupos toman clase a la misma hora y los alumnos se reparten entre talleres. Todos los maestros del bloque quedan ocupados en esas horas.</p>
+    <div class="fgrid">
+      <label>Nombre<input id="bNombre" value="TECNOLOGÍA"></label>
+      <label>Horas por semana<input id="bHoras" type="number" min="1" max="10" value="3"></label>
+      <label>Máximo de horas por día<input id="bMaxDia" type="number" min="1" max="5" value="2"></label>
+      <label>Color en la hoja de talleres<input id="bColor" type="color" value="#A9C5E8"></label>
+    </div>
+    <div class="acts"><label class="chk"><input type="checkbox" id="bDoble" checked>Si hay dos horas el mismo día, van seguidas</label></div>
+    <h3 style="margin-top:16px">Grupos que forman el bloque</h3>
+    <div id="bGrupos"></div>
+    <h3 style="margin-top:16px">Talleres</h3>
+    <div id="bTalleres"></div>
+    <div class="acts">
+      <button class="btn" id="bAddT" type="button">Agregar taller</button>
+      <button class="btn pri" id="bSave">Agregar bloque</button>
+      <button class="btn" id="bCancel" hidden>Cancelar edición</button>
+    </div>
+    <div id="bList" style="margin-top:16px"></div>
+  </div>
+  <div class="panel">
+    <div class="hbar"><h3 style="margin:0 auto 0 0">Carga registrada</h3>
+      <label>Filtrar por maestro<select id="kFiltro"></select></label></div>
+    <div id="kList"></div>
+  </div>
+</section>
+
+<!-- 6 REGLAS -->
+<section class="view" id="v-reglas">
+  <h2>Condicionantes</h2>
+  <p class="lead">Reglas que el horario debe cumplir siempre. El sistema ya evita que un maestro esté en dos grupos a la vez, respeta su disponibilidad, sus turnos y los máximos por día.</p>
+  <div class="panel">
+    <div class="fgrid">
+      <label>Aplica a<select id="rTipo"><option value="asignatura">Una asignatura</option><option value="maestro">Un maestro</option><option value="grupo">Un grupo</option></select></label>
+      <label>¿Cuál?<select id="rObj"></select></label>
+      <label>Condición<select id="rCond">
+        <option value="noDias">No puede tener clase estos días</option>
+        <option value="soloDias">Solo puede tener clase estos días</option>
+        <option value="noMods">No puede ir en estos módulos</option>
+        <option value="soloMods">Solo puede ir en estos módulos</option>
+        <option value="noUltimo">No puede ir en el último módulo</option>
+      </select></label>
+    </div>
+    <div id="rDiasW" style="margin-top:14px"><h3>Días</h3><div class="dchk" id="rDias"></div></div>
+    <div id="rModsW" style="margin-top:14px" hidden><h3>Módulos</h3><div class="dchk" id="rMods"></div></div>
+    <div class="acts"><button class="btn pri" id="rAdd">Agregar condicionante</button></div>
+  </div>
+  <div class="panel"><h3>Condicionantes activas</h3><div id="rList"></div></div>
+</section>
+
+<!-- 7 GENERAR -->
+<section class="view" id="v-generar">
+  <h2>Generar horario</h2>
+  <p class="lead">Antes de generar, revisa el diagnóstico: te dice si algo impide acomodar todas las clases.</p>
+  <div class="panel diag" id="diag"></div>
+  <div class="panel">
+    <div class="hbar">
+      <label>Intentos<small>más intentos, mejor resultado</small><input id="gIntentos" type="number" min="1" max="200" value="10" style="width:110px"></label>
+      <button class="btn gold" id="gRun">Generar horario</button>
+    </div>
+    <div id="gProg"></div>
+  </div>
+  <div id="gRes"></div>
+</section>
+
+<!-- 8 HORARIOS -->
+<section class="view" id="v-horarios">
+  <h2>Vista previa e impresión</h2>
+  <p class="lead">Así se verán las hojas impresas. Elige un grupo, profesor o bloque, o "Todos" para imprimir el juego completo.</p>
+  <div id="hStale"></div>
+  <div class="hbar">
+    <div class="tabs" role="tablist"><button id="t-grupo" class="on">Grupos</button><button id="t-maestro">Profesores</button><button id="t-bloque">Talleres</button></div>
+    <select id="hSel" aria-label="Seleccionar"></select>
+    <label class="chk"><input type="checkbox" id="hColor" checked>A color</label>
+    <label class="chk" id="hAjusteW"><input type="checkbox" id="hAjuste">Mover clases</label>
+    <button class="btn pri" id="hPrint">Imprimir</button>
+  </div>
+  <p class="hint" id="hHint" hidden>Toca una clase y luego el módulo destino. Si el destino tiene otra clase, se intercambian. El sistema revisa que no haya choques.</p>
+  <div id="hSum" class="hint" style="margin:0 0 10px"></div>
+  <div id="hGrid" class="preview"></div>
+</section>
+</main>
+</div>
+
+<div id="printArea"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* ===================== FIREBASE ===================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAwENSdzKQh6fIaDxoX4RQqCgG58cW-eds",
+  authDomain: "horario-de-clases-265b5.firebaseapp.com",
+  databaseURL: "https://horario-de-clases-265b5-default-rtdb.firebaseio.com",
+  projectId: "horario-de-clases-265b5",
+  storageBucket: "horario-de-clases-265b5.firebasestorage.app",
+  messagingSenderId: "477028636306",
+  appId: "1:477028636306:web:39b5561988446915e2b84b",
+  measurementId: "G-B1B0YW7RMJ"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const ROOT = 'horarios';
+
+/* ===================== CONSTANTES Y UTILIDADES ===================== */
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
+const TURNOS = ['matutino','mixto'];
+const DEF = {escuela:'',ciclo:'2026-2027',modDur:50,recesoIni:'10:20',recesoFin:'10:50',
+  turnos:{matutino:{nombre:'Matutino',ini:'07:00',fin:'13:20'},mixto:{nombre:'Mixto',ini:'08:40',fin:'15:00'}}};
+const PALETA = ['#2F6FB5','#C0504D','#3E9651','#8E5EA2','#D08A1E','#1F8A8A','#B5487A','#6B7A2A','#5A6ACF','#A0522D','#2C8C6E','#7A5C3E'];
+const MOT = {
+  grupo:'el grupo ya no tiene módulos libres',
+  turno:'el maestro no trabaja en el turno del grupo',
+  bloqueo:'el maestro no está disponible a esa hora',
+  choque:'el maestro ya da clase en otro grupo a esa hora',
+  maxdia:'la asignatura ya llegó a su máximo de horas en ese día',
+  doble:'la asignatura debe ir en módulos seguidos ese día',
+  maxmaestro:'el maestro llegó a su máximo de clases del día',
+  regla:'una condicionante lo impide',
+  bloqueTurno:'los grupos del bloque son de turnos distintos'
+};
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toMin = h => { const [a,b] = String(h||'0:0').split(':').map(Number); return (a||0)*60 + (b||0); };
+const fmt = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
+const arr = v => Array.isArray(v) ? v.filter(x => x != null) : Object.values(v || {});
+const clone = o => JSON.parse(JSON.stringify(o));
+const cmp = (a,b) => String(a).localeCompare(String(b),'es',{numeric:true,sensitivity:'base'});
+const newId = () => db.ref().push().key;
+const gName = g => g ? `${g.grado}º${g.grupo}` : '(grupo eliminado)';
+function toast(msg, tipo='ok'){ const t=$('#toast'); t.textContent=msg; t.className='show '+tipo; clearTimeout(t._h); t._h=setTimeout(()=>t.className='',4200); }
+
+let S = {config:clone(DEF),maestros:{},asignaturas:{},grupos:{},asignaciones:{},reglas:{},bloques:{},generado:null};
+let cargado = false;
+
+const horasDe = a => +a.horas || +(S.asignaturas[a.asignaturaId]?.horasSemana) || 0;
+const asigValidas = () => Object.entries(S.asignaciones).filter(([,a]) => S.maestros[a.maestroId] && S.asignaturas[a.asignaturaId] && S.grupos[a.grupoId]);
+const bloquesDe = () => Object.entries(S.bloques || {});
+const horasMaestro = mid => asigValidas().filter(([,a]) => a.maestroId===mid).reduce((s,[,a]) => s+horasDe(a), 0)
+  + bloquesDe().filter(([,b]) => b.talleres?.[mid]).reduce((s,[,b]) => s+(+b.horas||0), 0);
+const horasGrupo = gid => asigValidas().filter(([,a]) => a.grupoId===gid).reduce((s,[,a]) => s+horasDe(a), 0)
+  + bloquesDe().filter(([,b]) => b.grupos?.[gid]).reduce((s,[,b]) => s+(+b.horas||0), 0);
+function bloqueEtiqueta(b, o=''){
+  const por = {};
+  Object.keys(b?.grupos||{}).map(g => S.grupos[g]).filter(Boolean).forEach(g => (por[g.grado] ??= []).push(g.grupo));
+  return Object.keys(por).sort().map(gr => gr + o + por[gr].sort(cmp).join('')).join(' ');
+}
+const aliasDe = m => (m?.alias || String(m?.nombre||'').split(' ')[0] || '').toUpperCase();
+const subCorto = s => (s?.abrev || s?.nombre || '?').toUpperCase();
+const subLargo = s => s ? s.nombre.toUpperCase() + (s.abrev ? ` (${s.abrev.toUpperCase()})` : '') : '?';
+const libresDe = m => m.libres ? (+m.numLibres || 3) : 0;
+const gruposOrden = () => Object.entries(S.grupos).sort((a,b) => (a[1].grado-b[1].grado) || cmp(a[1].grupo,b[1].grupo));
+const maestrosOrden = () => Object.entries(S.maestros).sort((a,b) => cmp(a[1].nombre,b[1].nombre));
+const asigOrden = () => Object.entries(S.asignaturas).sort((a,b) => cmp(a[1].nombre,b[1].nombre));
+const turnosDe = m => TURNOS.filter(t => !m || !m.turnos || m.turnos[t] !== false);
+const nomTurno = t => S.config.turnos[t]?.nombre || t;
+
+/* ===================== MÓDULOS Y VALIDACIÓN DE TURNOS ===================== */
+function calcSlots(cfg, t){
+  const tt = cfg.turnos[t], dur = +cfg.modDur, ri = toMin(cfg.recesoIni), rf = toMin(cfg.recesoFin);
+  const ini = toMin(tt.ini), fin = toMin(tt.fin);
+  const slots = [], av = [], er = [];
+  if (!tt.ini || !tt.fin) er.push('Falta la hora de entrada o de salida.');
+  else if (fin <= ini) er.push('La salida debe ser después de la entrada.');
+  if (!(dur >= 20 && dur <= 120)) er.push('La duración del módulo debe estar entre 20 y 120 minutos.');
+  if (rf <= ri) er.push('El fin del receso debe ser después de su inicio.');
+  const dentro = ri >= ini && rf <= fin;
+  if (!er.length && !dentro && !(rf <= ini || ri >= fin)) er.push(`El receso (${fmt(ri)} a ${fmt(rf)}) queda parcialmente fuera del turno.`);
+  if (er.length) return {slots, av, er, dentro};
+  let t0 = ini, guard = 0;
+  while (t0 + dur <= fin && guard++ < 60){
+    if (dentro && t0 < rf && t0 + dur > ri){
+      if (t0 < ri) av.push(`Quedan ${ri-t0} min sin usar antes del receso (${fmt(t0)} a ${fmt(ri)}).`);
+      t0 = rf; continue;
+    }
+    slots.push({n:slots.length+1, ini:t0, fin:t0+dur});
+    t0 += dur;
+  }
+  if (dentro && t0 <= ri && ri < fin) { /* receso nunca alcanzado */ }
+  if (t0 < fin) av.push(`Quedan ${fin-t0} min sin usar al final (${fmt(t0)} a ${fmt(fin)}).`);
+  if (!slots.length) er.push('No cabe ningún módulo en este turno.');
+  return {slots, av, er, dentro};
+}
+const slotsTurno = t => calcSlots(S.config, t).slots;
+function filas(turnos){
+  const map = new Map();
+  turnos.forEach(t => slotsTurno(t).forEach(s => { if (!map.has(s.ini)) map.set(s.ini, {ini:s.ini, fin:s.fin}); }));
+  return [...map.values()].sort((a,b) => a.ini-b.ini);
+}
+function conReceso(rows){
+  const ri = toMin(S.config.recesoIni), rf = toMin(S.config.recesoFin), out = [];
+  let done = false;
+  rows.forEach((r,i) => { if (!done && i>0 && r.ini >= rf && rows[i-1].fin <= ri){ out.push({receso:true}); done = true; } out.push(r); });
+  return out;
+}
+const recesoRow = () => `<tr class="rec"><th class="hcol">${fmt(toMin(S.config.recesoIni))}<small>${fmt(toMin(S.config.recesoFin))}</small></th><td colspan="5">Receso</td></tr>`;
+
+/* ===================== CONFIGURACIÓN ===================== */
+function readCfg(){
+  return {escuela:$('#cEscuela').value.trim(), ciclo:$('#cCiclo').value.trim(), modDur:+$('#cDur').value,
+    recesoIni:$('#cRI').value, recesoFin:$('#cRF').value,
+    turnos:{matutino:{nombre:'Matutino',ini:$('#cMI').value,fin:$('#cMF').value},
+            mixto:{nombre:'Mixto',ini:$('#cXI').value,fin:$('#cXF').value}}};
+}
+function fillCfg(c){
+  $('#cEscuela').value=c.escuela||''; $('#cCiclo').value=c.ciclo||''; $('#cDur').value=c.modDur;
+  $('#cRI').value=c.recesoIni; $('#cRF').value=c.recesoFin;
+  $('#cMI').value=c.turnos.matutino.ini; $('#cMF').value=c.turnos.matutino.fin;
+  $('#cXI').value=c.turnos.mixto.ini; $('#cXF').value=c.turnos.mixto.fin;
+  renderCfgValid(readCfg());
+}
+function renderCfgValid(cfg){
+  let h = '', hayErr = false;
+  for (const t of TURNOS){
+    const r = calcSlots(cfg, t), tt = cfg.turnos[t];
+    if (r.er.length) hayErr = true;
+    const cls = r.er.length ? 'bad' : r.av.length ? 'warn' : 'ok';
+    const st = r.er.length ? 'Hay que corregir el turno' : r.av.length ? `${r.slots.length} módulos, pero sobra tiempo` : `Cuadra exacto: ${r.slots.length} módulos de ${cfg.modDur} min`;
+    h += `<div class="tcard ${cls}"><h3>Turno ${esc(tt.nombre.toLowerCase())}: ${esc(tt.ini)} a ${esc(tt.fin)}</h3><p class="st">${st}</p>`;
+    if (r.slots.length){
+      h += '<ol>'; let rec = false;
+      const ri = toMin(cfg.recesoIni), rf = toMin(cfg.recesoFin);
+      r.slots.forEach((s,i) => {
+        if (!rec && r.dentro && i>0 && s.ini >= rf && r.slots[i-1].fin <= ri){ h += `<li class="rc"><span>Receso</span><span>${fmt(ri)} a ${fmt(rf)}</span></li>`; rec = true; }
+        h += `<li><span>Módulo ${s.n}</span><span>${fmt(s.ini)} a ${fmt(s.fin)}</span></li>`;
+      });
+      h += '</ol>';
+    }
+    const msgs = [...r.er, ...r.av];
+    if (msgs.length) h += `<ul class="msgs">${msgs.map(m=>`<li>${esc(m)}</li>`).join('')}</ul>`;
+    h += '</div>';
+  }
+  $('#cValid').innerHTML = h;
+  return hayErr;
+}
+
+/* ===================== MAESTROS ===================== */
+let editM = null, bloq = {};
+function resetM(){
+  editM=null; bloq={};
+  $('#mNombre').value=''; $('#mAlias').value=''; $('#mHoras').value=''; $('#mMaxDia').value='';
+  $('#mTM').checked=true; $('#mTX').checked=true; $('#mLibres').checked=true; $('#mNumLibres').value=3;
+  $('#mSave').textContent='Agregar maestro'; $('#mCancel').hidden=true; renderBloq();
+}
+function renderBloq(){
+  const m = {turnos:{matutino:$('#mTM').checked, mixto:$('#mTX').checked}};
+  const rows = conReceso(filas(turnosDe(m)));
+  if (!rows.length){ $('#mBloq').innerHTML='<p class="empty">Selecciona al menos un turno.</p>'; return; }
+  let h = '<table class="tt mini"><thead><tr><th class="hcol">Hora</th>'+DIAS.map(d=>`<th>${d}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach(r => {
+    if (r.receso){ h += recesoRow(); return; }
+    h += `<tr><th class="hcol">${fmt(r.ini)}<small>${fmt(r.fin)}</small></th>`;
+    for (let d=0; d<5; d++){
+      const k = `${d}-${r.ini}`;
+      h += `<td class="${bloq[k]?'bloq':''}"><button type="button" class="bq" data-k="${k}" aria-pressed="${!!bloq[k]}" aria-label="${DIAS[d]} ${fmt(r.ini)}">${bloq[k]?'No disponible':'Disponible'}</button></td>`;
+    }
+    h += '</tr>';
+  });
+  $('#mBloq').innerHTML = h + '</tbody></table>';
+}
+function saveM(){
+  const nombre = $('#mNombre').value.trim(), horas = +$('#mHoras').value;
+  if (!nombre) return toast('Escribe el nombre del maestro.','err');
+  if (!(horas>0)) return toast('Indica cuántas horas trabaja por semana.','err');
+  const turnos = {matutino:$('#mTM').checked, mixto:$('#mTX').checked};
+  if (!turnos.matutino && !turnos.mixto) return toast('Marca al menos un turno.','err');
+  const dup = Object.entries(S.maestros).find(([id,m]) => id!==editM && cmp(m.nombre,nombre)===0);
+  if (dup) return toast('Ya existe un maestro con ese nombre.','err');
+  const data = {nombre, alias:$('#mAlias').value.trim().toUpperCase(), horasContrato:horas, maxDia:+$('#mMaxDia').value||0, turnos,
+    libres:$('#mLibres').checked, numLibres:+$('#mNumLibres').value||3, bloqueos:bloq};
+  const id = editM || newId(), eraEdit = !!editM;
+  db.ref(`${ROOT}/maestros/${id}`).set(data)
+    .then(() => { toast(eraEdit ? 'Maestro actualizado.' : 'Maestro agregado.'); resetM(); })
+    .catch(e => toast('No se guardó: '+e.message,'err'));
+}
+function editarM(id){
+  const m = S.maestros[id]; if (!m) return;
+  editM = id; bloq = clone(m.bloqueos||{});
+  $('#mNombre').value=m.nombre; $('#mAlias').value=m.alias||''; $('#mHoras').value=m.horasContrato||''; $('#mMaxDia').value=m.maxDia||'';
+  $('#mTM').checked = m.turnos?.matutino !== false; $('#mTX').checked = m.turnos?.mixto !== false;
+  $('#mLibres').checked=!!m.libres; $('#mNumLibres').value=m.numLibres||3;
+  $('#mSave').textContent='Guardar cambios'; $('#mCancel').hidden=false; renderBloq();
+  $('#v-maestros').scrollIntoView({behavior:'smooth'});
+}
+function borrarM(id){
+  const m = S.maestros[id]; if (!m) return;
+  const asg = Object.entries(S.asignaciones).filter(([,a]) => a.maestroId===id);
+  if (!confirm(`¿Eliminar a ${m.nombre}?${asg.length ? ` También se quitarán sus ${asg.length} asignaciones.` : ''}`)) return;
+  const u = {[`${ROOT}/maestros/${id}`]:null};
+  bloquesDe().forEach(([bid,b]) => { if (b.talleres?.[id]) u[`${ROOT}/bloques/${bid}/talleres/${id}`]=null; });
+  asg.forEach(([aid]) => u[`${ROOT}/asignaciones/${aid}`]=null);
+  Object.entries(S.reglas).forEach(([rid,r]) => { if (r.tipo==='maestro' && r.obj===id) u[`${ROOT}/reglas/${rid}`]=null; });
+  db.ref().update(u).then(() => { toast('Maestro eliminado.'); if (editM===id) resetM(); });
+}
+function renderMaestros(){
+  const rows = maestrosOrden();
+  if (!rows.length){ $('#mList').innerHTML='<p class="empty">Aún no hay maestros. Agrega el primero con el formulario de arriba.</p>'; return; }
+  let h = '<div class="wrap"><table class="list"><thead><tr><th>Nombre</th><th>Carga semanal</th><th>Turnos</th><th>Horas libres</th><th>No disponible</th><th></th></tr></thead><tbody>';
+  rows.forEach(([id,m]) => {
+    const fg = horasMaestro(id), lib = libresDe(m), tot = fg+lib, c = +m.horasContrato||0;
+    const pct = c ? Math.min(100, tot/c*100) : 0, cls = tot>c ? 'bad' : tot===c ? 'ok' : '';
+    h += `<tr><td><b>${esc(m.nombre)}</b> <small class="hint">(${esc(aliasDe(m))})</small>${m.maxDia?`<br><small class="hint">Máx. ${m.maxDia} por día</small>`:''}</td>
+      <td><div class="carga ${cls}"><div class="bar"><i style="width:${pct}%"></i></div><span>${fg} frente a grupo${lib?` + ${lib} libres`:''} de ${c} h</span></div></td>
+      <td>${turnosDe(m).map(nomTurno).join(' y ')}</td><td>${lib||'No'}</td><td>${Object.keys(m.bloqueos||{}).length} módulos</td>
+      <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
+  });
+  $('#mList').innerHTML = h + '</tbody></table></div>';
+}
+
+/* ===================== ASIGNATURAS ===================== */
+let editA = null;
+function resetA(){
+  editA=null; $('#aNombre').value=''; $('#aAbrev').value=''; $('#aHoras').value=5; $('#aMaxDia').value=1; $('#aDoble').checked=false;
+  $('#aColor').value = PALETA[Object.keys(S.asignaturas).length % PALETA.length];
+  $('#aSave').textContent='Agregar asignatura'; $('#aCancel').hidden=true;
+}
+function saveA(){
+  const nombre=$('#aNombre').value.trim(), horas=+$('#aHoras').value, maxDia=+$('#aMaxDia').value;
+  if (!nombre) return toast('Escribe el nombre de la asignatura.','err');
+  if (!(horas>0)) return toast('Indica cuántas veces por semana se imparte.','err');
+  if (!(maxDia>0)) return toast('El máximo por día debe ser al menos 1.','err');
+  if (horas > maxDia*5) return toast(`${horas} horas no caben en 5 días con máximo ${maxDia} por día.`,'err');
+  const dup = Object.entries(S.asignaturas).find(([id,a]) => id!==editA && cmp(a.nombre,nombre)===0);
+  if (dup) return toast('Ya existe una asignatura con ese nombre.','err');
+  const id = editA || newId(), eraEdit = !!editA;
+  db.ref(`${ROOT}/asignaturas/${id}`).set({nombre, abrev:$('#aAbrev').value.trim().toUpperCase(), horasSemana:horas, maxDia, doble:$('#aDoble').checked, color:$('#aColor').value})
+    .then(() => { toast(eraEdit?'Asignatura actualizada.':'Asignatura agregada.'); resetA(); });
+}
+function editarA(id){
+  const a=S.asignaturas[id]; if (!a) return; editA=id;
+  $('#aNombre').value=a.nombre; $('#aAbrev').value=a.abrev||''; $('#aHoras').value=a.horasSemana; $('#aMaxDia').value=a.maxDia||1;
+  $('#aDoble').checked=!!a.doble; $('#aColor').value=a.color||PALETA[0];
+  $('#aSave').textContent='Guardar cambios'; $('#aCancel').hidden=false;
+  $('#v-asignaturas').scrollIntoView({behavior:'smooth'});
+}
+function borrarA(id){
+  const a=S.asignaturas[id]; if (!a) return;
+  const asg = Object.entries(S.asignaciones).filter(([,x]) => x.asignaturaId===id);
+  if (!confirm(`¿Eliminar ${a.nombre}?${asg.length?` También se quitarán ${asg.length} asignaciones.`:''}`)) return;
+  const u = {[`${ROOT}/asignaturas/${id}`]:null};
+  asg.forEach(([aid]) => u[`${ROOT}/asignaciones/${aid}`]=null);
+  Object.entries(S.reglas).forEach(([rid,r]) => { if (r.tipo==='asignatura' && r.obj===id) u[`${ROOT}/reglas/${rid}`]=null; });
+  db.ref().update(u).then(() => { toast('Asignatura eliminada.'); if (editA===id) resetA(); });
+}
+function seedA(){
+  const ej = [['Español',5,1],['Matemáticas',5,1],['Inglés',3,1],['Ciencias',4,1],['Geografía',4,1],['Historia',2,1],
+    ['Formación Cívica y Ética',2,1],['Artes',3,1],['Educación Física',2,1],['Tecnología',3,2],['Tutoría',1,1]];
+  const u = {}; let n = 0;
+  ej.forEach(([nombre,h,md],i) => {
+    if (Object.values(S.asignaturas).some(a => cmp(a.nombre,nombre)===0)) return;
+    u[`${ROOT}/asignaturas/${newId()}`] = {nombre, horasSemana:h, maxDia:md, doble:md>1, color:PALETA[i%PALETA.length]}; n++;
+  });
+  if (!n) return toast('Las asignaturas de ejemplo ya están registradas.');
+  db.ref().update(u).then(() => toast(`Se agregaron ${n} asignaturas. Ajusta sus horas si tu plan es distinto.`));
+}
+function renderAsignaturas(){
+  const rows = asigOrden();
+  if (!rows.length){ $('#aList').innerHTML='<p class="empty">Aún no hay asignaturas. Agrégalas una por una o carga las de ejemplo.</p>'; return; }
+  let h = '<div class="wrap"><table class="list"><thead><tr><th>Asignatura</th><th>Por semana</th><th>Máx. por día</th><th>Bloque doble</th><th>Grupos</th><th></th></tr></thead><tbody>';
+  rows.forEach(([id,a]) => {
+    const ng = Object.values(S.asignaciones).filter(x => x.asignaturaId===id).length;
+    h += `<tr><td><span class="sw" style="background:${esc(a.color)}"></span><b>${esc(a.nombre)}</b>${a.abrev?` <small class="hint">(${esc(a.abrev)})</small>`:''}</td><td>${a.horasSemana}</td><td>${a.maxDia||1}</td><td>${a.doble?'Sí':'No'}</td><td>${ng}</td>
+      <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
+  });
+  $('#aList').innerHTML = h + '</tbody></table></div>';
+}
+
+/* ===================== GRUPOS ===================== */
+function parseLetras(s){
+  s = s.toUpperCase().replace(/\s/g,''); const out = [];
+  s.split(',').filter(Boolean).forEach(p => {
+    const m = p.match(/^([A-Z])-([A-Z])$/);
+    if (m){ for (let c=m[1].charCodeAt(0); c<=m[2].charCodeAt(0); c++) out.push(String.fromCharCode(c)); }
+    else out.push(p);
+  });
+  return [...new Set(out)];
+}
+function addGrupos(){
+  const grado=+$('#gGrado').value, turno=$('#gTurno').value, letras=parseLetras($('#gLetras').value);
+  if (!letras.length) return toast('Escribe al menos un grupo (A, A,B,C o A-I).','err');
+  const u = {}; let n = 0, rep = 0;
+  letras.forEach(l => {
+    if (Object.values(S.grupos).some(g => +g.grado===grado && g.grupo===l)){ rep++; return; }
+    u[`${ROOT}/grupos/${newId()}`] = {grado, grupo:l, turno}; n++;
+  });
+  if (!n) return toast('Esos grupos ya existen.','err');
+  db.ref().update(u).then(() => { toast(`Se agregaron ${n} grupos${rep?` (${rep} ya existían)`:''}.`); $('#gLetras').value=''; });
+}
+function borrarG(id){
+  const g=S.grupos[id]; if (!g) return;
+  const asg = Object.entries(S.asignaciones).filter(([,a]) => a.grupoId===id);
+  if (!confirm(`¿Eliminar el grupo ${gName(g)}?${asg.length?` También se quitarán sus ${asg.length} asignaciones.`:''}`)) return;
+  const u = {[`${ROOT}/grupos/${id}`]:null};
+  bloquesDe().forEach(([bid,b]) => { if (b.grupos?.[id]) u[`${ROOT}/bloques/${bid}/grupos/${id}`]=null; });
+  asg.forEach(([aid]) => u[`${ROOT}/asignaciones/${aid}`]=null);
+  Object.entries(S.reglas).forEach(([rid,r]) => { if (r.tipo==='grupo' && r.obj===id) u[`${ROOT}/reglas/${rid}`]=null; });
+  db.ref().update(u).then(() => toast('Grupo eliminado.'));
+}
+function renderGrupos(){
+  const rows = gruposOrden();
+  if (!rows.length){ $('#gList').innerHTML='<p class="empty">Aún no hay grupos registrados.</p>'; return; }
+  let h = '<div class="wrap"><table class="list"><thead><tr><th>Grupo</th><th>Turno</th><th>Horas asignadas</th><th></th></tr></thead><tbody>';
+  rows.forEach(([id,g]) => {
+    const cap = slotsTurno(g.turno).length*5, hr = horasGrupo(id);
+    const cls = hr>cap ? 'bad' : hr===cap ? 'ok' : '';
+    h += `<tr><td><b>${gName(g)}</b></td>
+      <td><select data-turno="${id}">${TURNOS.map(t=>`<option value="${t}" ${g.turno===t?'selected':''}>${nomTurno(t)}</option>`).join('')}</select></td>
+      <td><div class="carga ${cls}"><div class="bar"><i style="width:${cap?Math.min(100,hr/cap*100):0}%"></i></div><span>${hr} de ${cap} módulos</span></div></td>
+      <td class="ra"><button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
+  });
+  $('#gList').innerHTML = h + '</tbody></table></div>';
+}
+
+/* ===================== CARGA ACADÉMICA ===================== */
+function fillSelect(sel, items, ph){
+  const v = sel.value;
+  sel.innerHTML = (ph!=null?`<option value="">${esc(ph)}</option>`:'') + items.map(([id,t]) => `<option value="${id}">${esc(t)}</option>`).join('');
+  if ([...sel.options].some(o => o.value===v)) sel.value = v;
+}
+function renderKGrupos(){ renderChips('kGrupos'); }
+function renderChips(cont, forzar){
+  const el = $('#'+cont);
+  const marcados = forzar || new Set([...el.querySelectorAll('input:checked')].map(i => i.value));
+  const porGrado = {};
+  gruposOrden().forEach(([id,g]) => (porGrado[g.grado] ??= []).push([id,g]));
+  let h = '';
+  Object.keys(porGrado).forEach(gr => {
+    h += `<div class="krow"><button type="button" class="btn sm" data-grado="${gr}">${gr}° grado</button>` +
+      porGrado[gr].map(([id,g]) => `<label class="pill"><input type="checkbox" value="${id}" ${marcados.has(id)?'checked':''} hidden>${esc(g.grupo)}<small>${g.turno==='mixto'?'Mixto':'Mat.'}</small></label>`).join('') + '</div>';
+  });
+  el.innerHTML = h || '<p class="empty">Primero registra grupos en el paso 4.</p>';
+}
+function kInfo(){
+  const mid=$('#kMaestro').value, sid=$('#kAsig').value, s=S.asignaturas[sid], m=S.maestros[mid];
+  $('#kHoras').placeholder = s ? `${s.horasSemana} (de la asignatura)` : '';
+  if (m){ const fg=horasMaestro(mid), lib=libresDe(m); $('#kInfo').textContent = `${m.nombre} lleva ${fg} h frente a grupo${lib?` + ${lib} libres`:''} de ${m.horasContrato} h.`; }
+  else $('#kInfo').textContent = '';
+}
+function addCarga(){
+  const mid=$('#kMaestro').value, sid=$('#kAsig').value, horas=+$('#kHoras').value||0;
+  const gids = $$('#kGrupos input:checked').map(i => i.value);
+  if (!mid) return toast('Elige un maestro.','err');
+  if (!sid) return toast('Elige una asignatura.','err');
+  if (!gids.length) return toast('Marca al menos un grupo.','err');
+  const m = S.maestros[mid], s = S.asignaturas[sid];
+  const h = horas || s.horasSemana;
+  if (h > (s.maxDia||1)*5) return toast(`${h} horas no caben en la semana con máximo ${s.maxDia||1} por día. Ajusta el máximo en Asignaturas.`,'err');
+  const u = {}; let n = 0; const avisos = [];
+  for (const gid of gids){
+    const g = S.grupos[gid];
+    if (m.turnos && m.turnos[g.turno]===false){ avisos.push(`${gName(g)} es del turno ${nomTurno(g.turno).toLowerCase()} y ${m.nombre} no trabaja en ese turno`); continue; }
+    if (Object.values(S.asignaciones).some(a => a.maestroId===mid && a.asignaturaId===sid && a.grupoId===gid)){ avisos.push(`${gName(g)} ya tenía esta asignación`); continue; }
+    const d = {maestroId:mid, asignaturaId:sid, grupoId:gid}; if (horas) d.horas = horas;
+    u[`${ROOT}/asignaciones/${newId()}`] = d; n++;
+  }
+  if (!n) return toast(avisos.join('. ')+'.','err');
+  db.ref().update(u).then(() => {
+    toast(`Se asignaron ${n} grupo(s).${avisos.length?' Omitidos: '+avisos.join('; ')+'.':''}`, avisos.length?'err':'ok');
+    $$('#kGrupos input:checked').forEach(i => i.checked=false);
+  });
+}
+function renderCarga(){
+  fillSelect($('#kMaestro'), maestrosOrden().map(([id,m]) => [id,m.nombre]), 'Elige un maestro');
+  fillSelect($('#kAsig'), asigOrden().map(([id,a]) => [id,a.nombre]), 'Elige una asignatura');
+  fillSelect($('#kFiltro'), maestrosOrden().map(([id,m]) => [id,m.nombre]), 'Todos');
+  renderKGrupos(); kInfo();
+  const f = $('#kFiltro').value;
+  const rows = Object.entries(S.asignaciones).filter(([,a]) => !f || a.maestroId===f)
+    .map(([id,a]) => ({id,a,m:S.maestros[a.maestroId],s:S.asignaturas[a.asignaturaId],g:S.grupos[a.grupoId]}))
+    .sort((x,y) => cmp(x.m?.nombre||'',y.m?.nombre||'') || cmp(x.s?.nombre||'',y.s?.nombre||'') || ((x.g?.grado||0)-(y.g?.grado||0)) || cmp(x.g?.grupo||'',y.g?.grupo||''));
+  if (!rows.length){ $('#kList').innerHTML='<p class="empty">No hay asignaciones todavía.</p>'; return; }
+  let h = '<div class="wrap"><table class="list"><thead><tr><th>Maestro</th><th>Asignatura</th><th>Grupo</th><th>Horas por semana</th><th></th></tr></thead><tbody>';
+  rows.forEach(({id,a,m,s,g}) => {
+    h += `<tr><td>${esc(m?.nombre||'(eliminado)')}</td><td><span class="sw" style="background:${esc(s?.color||'#999')}"></span>${esc(s?.nombre||'(eliminada)')}</td><td>${gName(g)}</td>
+      <td><input class="hin" type="number" min="1" max="20" value="${a.horas||''}" placeholder="${s?.horasSemana||''}" data-hor="${id}" aria-label="Horas por semana"></td>
+      <td class="ra"><button class="btn sm del" data-del="${id}">Quitar</button></td></tr>`;
+  });
+  $('#kList').innerHTML = h + '</tbody></table></div>';
+}
+
+/* ===================== BLOQUES DE TALLERES ===================== */
+let editB = null, talleresForm = [];
+function renderTalleresForm(){
+  const opts = maestrosOrden();
+  $('#bTalleres').innerHTML = talleresForm.map((t,i) => `<div class="trow">
+    <select data-ti="${i}" data-f="mid" aria-label="Maestro del taller"><option value="">Elige un maestro</option>${opts.map(([id,m]) => `<option value="${id}" ${t.mid===id?'selected':''}>${esc(m.nombre)}</option>`).join('')}</select>
+    <input data-ti="${i}" data-f="tal" placeholder="Nombre del taller, ej. OFIMÁTICA" value="${esc(t.tal||'')}" aria-label="Nombre del taller">
+    <button type="button" class="btn sm del" data-quitar="${i}">Quitar</button></div>`).join('') || '<p class="empty">Agrega al menos un taller.</p>';
+}
+function resetB(){
+  editB = null; $('#bNombre').value = 'TECNOLOGÍA'; $('#bHoras').value = 3; $('#bMaxDia').value = 2; $('#bDoble').checked = true;
+  $('#bColor').value = ['#A9C5E8','#BDBDBD','#F2C9EC','#DCE9F7','#8ED8F0','#FFE0D0','#FFFF66','#FFC000','#F0A080'][bloquesDe().length % 9];
+  talleresForm = [{mid:'',tal:''}];
+  renderChips('bGrupos', new Set()); renderTalleresForm();
+  $('#bSave').textContent = 'Agregar bloque'; $('#bCancel').hidden = true;
+}
+function saveB(){
+  const nombre = ($('#bNombre').value.trim() || 'TECNOLOGÍA').toUpperCase(), horas = +$('#bHoras').value, maxDia = +$('#bMaxDia').value || 1;
+  const gids = $$('#bGrupos input:checked').map(i => i.value);
+  if (!gids.length) return toast('Marca los grupos que forman el bloque.','err');
+  if (new Set(gids.map(g => S.grupos[g].turno)).size > 1) return toast('Los grupos de un bloque deben ser del mismo turno.','err');
+  if (!(horas>0)) return toast('Indica las horas por semana del bloque.','err');
+  if (horas > maxDia*5) return toast(`${horas} horas no caben en la semana con máximo ${maxDia} por día.`,'err');
+  const tal = {};
+  for (const t of talleresForm){
+    if (!t.mid) continue;
+    if (tal[t.mid]) return toast(`${S.maestros[t.mid].nombre} aparece dos veces en el bloque.`,'err');
+    tal[t.mid] = (t.tal||'').trim().toUpperCase() || nombre;
+  }
+  if (!Object.keys(tal).length) return toast('Agrega al menos un maestro de taller.','err');
+  const data = {nombre, horas, maxDia, doble:$('#bDoble').checked, color:$('#bColor').value,
+    grupos:Object.fromEntries(gids.map(g => [g,true])), talleres:tal};
+  const id = editB || newId(), era = !!editB;
+  db.ref(`${ROOT}/bloques/${id}`).set(data).then(() => { toast(era ? 'Bloque actualizado.' : 'Bloque agregado.'); resetB(); });
+}
+function editarB(id){
+  const b = S.bloques[id]; if (!b) return; editB = id;
+  $('#bNombre').value = b.nombre; $('#bHoras').value = b.horas; $('#bMaxDia').value = b.maxDia||1; $('#bDoble').checked = !!b.doble; $('#bColor').value = b.color||'#A9C5E8';
+  talleresForm = Object.entries(b.talleres||{}).map(([mid,tal]) => ({mid,tal}));
+  renderChips('bGrupos', new Set(Object.keys(b.grupos||{}))); renderTalleresForm();
+  $('#bSave').textContent = 'Guardar cambios'; $('#bCancel').hidden = false;
+  $('#bPanel').scrollIntoView({behavior:'smooth'});
+}
+function renderBloques(){
+  if (!document.activeElement || !$('#bTalleres').contains(document.activeElement)) renderTalleresForm();
+  renderChips('bGrupos');
+  const rows = bloquesDe().sort((a,b) => cmp(a[1].nombre,b[1].nombre) || cmp(bloqueEtiqueta(a[1]),bloqueEtiqueta(b[1])));
+  if (!rows.length){ $('#bList').innerHTML = '<p class="empty">Sin bloques. Ejemplo: TECNOLOGÍA para 1° A, B y C con los talleres de Ofimática, Turismo e Informática.</p>'; return; }
+  $('#bList').innerHTML = '<div class="wrap"><table class="list"><thead><tr><th>Bloque</th><th>Horas</th><th>Talleres</th><th></th></tr></thead><tbody>' + rows.map(([id,b]) =>
+    `<tr><td><span class="sw" style="background:${esc(b.color)}"></span><b>${esc(b.nombre)} ${esc(bloqueEtiqueta(b))}</b></td><td>${b.horas}</td>
+     <td>${Object.entries(b.talleres||{}).map(([m,t]) => `${esc(aliasDe(S.maestros[m]))}: ${esc(t)}`).join(', ')}</td>
+     <td class="ra"><button class="btn sm" data-edit="${id}">Editar</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`).join('') + '</tbody></table></div>';
+}
+
+/* ===================== CONDICIONANTES ===================== */
+function renderReglaForm(){
+  const t = $('#rTipo').value;
+  const items = t==='asignatura' ? asigOrden().map(([id,a]) => [id,a.nombre])
+    : t==='maestro' ? maestrosOrden().map(([id,m]) => [id,m.nombre])
+    : gruposOrden().map(([id,g]) => [id,gName(g)]);
+  fillSelect($('#rObj'), items, 'Elige');
+  const c = $('#rCond').value;
+  $('#rDiasW').hidden = !(c==='noDias' || c==='soloDias');
+  $('#rModsW').hidden = !(c==='noMods' || c==='soloMods');
+  if (!$('#rDias').children.length) $('#rDias').innerHTML = DIAS.map((d,i) => `<label class="pill"><input type="checkbox" value="${i}" hidden>${d}</label>`).join('');
+  const max = Math.max(...TURNOS.map(t => slotsTurno(t).length), 1);
+  if ($('#rMods').children.length !== max) $('#rMods').innerHTML = Array.from({length:max},(_,i) => `<label class="pill"><input type="checkbox" value="${i+1}" hidden>Módulo ${i+1}</label>`).join('');
+}
+function reglaTxt(r){
+  const obj = r.tipo==='asignatura' ? S.asignaturas[r.obj]?.nombre : r.tipo==='maestro' ? S.maestros[r.obj]?.nombre : (S.grupos[r.obj] ? gName(S.grupos[r.obj]) : null);
+  const dias = arr(r.dias).map(d => DIAS[d]).join(', '), mods = arr(r.mods).join(', ');
+  const c = {noDias:`no tiene clase: ${dias}`, soloDias:`solo tiene clase: ${dias}`, noMods:`no va en los módulos ${mods}`,
+    soloMods:`solo va en los módulos ${mods}`, noUltimo:'no va en el último módulo del día'}[r.cond];
+  const pre = {asignatura:'Asignatura', maestro:'Maestro', grupo:'Grupo'}[r.tipo];
+  return `${pre} <b>${esc(obj||'(eliminado)')}</b> ${esc(c)}`;
+}
+function addRegla(){
+  const tipo=$('#rTipo').value, obj=$('#rObj').value, cond=$('#rCond').value;
+  if (!obj) return toast('Elige a qué se aplica la condicionante.','err');
+  const r = {tipo, obj, cond};
+  if (cond==='noDias' || cond==='soloDias'){
+    r.dias = $$('#rDias input:checked').map(i => +i.value);
+    if (!r.dias.length) return toast('Marca al menos un día.','err');
+  }
+  if (cond==='noMods' || cond==='soloMods'){
+    r.mods = $$('#rMods input:checked').map(i => +i.value);
+    if (!r.mods.length) return toast('Marca al menos un módulo.','err');
+  }
+  db.ref(`${ROOT}/reglas/${newId()}`).set(r).then(() => { toast('Condicionante agregada.'); $$('#rDias input,#rMods input').forEach(i => i.checked=false); });
+}
+function renderReglas(){
+  renderReglaForm();
+  const rows = Object.entries(S.reglas);
+  if (!rows.length){ $('#rList').innerHTML='<p class="empty">Sin condicionantes. Ejemplo útil: Educación Física no va en el último módulo.</p>'; return; }
+  $('#rList').innerHTML = '<div class="wrap"><table class="list"><tbody>' + rows.map(([id,r]) =>
+    `<tr><td>${reglaTxt(r)}</td><td class="ra"><button class="btn sm del" data-del="${id}">Quitar</button></td></tr>`).join('') + '</tbody></table></div>';
+}
+
+/* ===================== MOTOR DEL GENERADOR ===================== */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+// Una "clase" (L) ocupa uno o varios grupos (gids) y uno o varios maestros (mids) al mismo tiempo.
+function lessonOf(aid){
+  if (String(aid).startsWith('B:')){
+    const b = S.bloques[aid.slice(2)]; if (!b) return null;
+    const gids = Object.keys(b.grupos||{}).filter(g => S.grupos[g]).sort();
+    const mids = Object.keys(b.talleres||{}).filter(m => S.maestros[m]);
+    if (!gids.length) return null;
+    return {aid, gids, mids, sid:aid, bloque:true};
+  }
+  const a = S.asignaciones[aid];
+  if (!a || !S.maestros[a.maestroId] || !S.asignaturas[a.asignaturaId] || !S.grupos[a.grupoId]) return null;
+  return {aid, gids:[a.grupoId], mids:[a.maestroId], sid:a.asignaturaId};
+}
+function makeEngine(){
+  const cfg = S.config, dur = +cfg.modDur, T = {};
+  TURNOS.forEach(t => T[t] = calcSlots(cfg,t).slots);
+  const G = {};
+  for (const [gid,g] of Object.entries(S.grupos)) G[gid] = {...g, slots:T[g.turno]||[]};
+  const grid={}, tBusy={}, tDay={}, tBlock={}, sDay={};
+  for (const gid in G) grid[gid] = DIAS.map(() => Array(G[gid].slots.length).fill(null));
+  for (const [mid,m] of Object.entries(S.maestros)){
+    tBusy[mid] = DIAS.map(() => []); tDay[mid] = [0,0,0,0,0]; tBlock[mid] = DIAS.map(() => []);
+    for (const k of Object.keys(m.bloqueos||{})){ const [d,ini] = k.split('-').map(Number); if (tBlock[mid][d]) tBlock[mid][d].push([ini,ini+dur]); }
+  }
+  const reglas = Object.values(S.reglas||{});
+  const sd = L => { const k = L.gids[0]+'|'+L.sid; return sDay[k] || (sDay[k] = DIAS.map(() => [])); };
+  const conf = L => L.bloque ? S.bloques[L.aid.slice(2)] : S.asignaturas[L.sid];
+  function check(L,d,s){
+    const g0 = G[L.gids[0]]; if (!g0) return 'grupo';
+    for (const gid of L.gids){ const g = G[gid]; if (!g || g.turno !== g0.turno) return 'bloqueTurno'; if (grid[gid][d][s.n-1]) return 'grupo'; }
+    for (const mid of L.mids){
+      const m = S.maestros[mid];
+      if (m.turnos && m.turnos[g0.turno]===false) return 'turno';
+      for (const b of tBlock[mid][d]) if (s.ini<b[1] && b[0]<s.fin) return 'bloqueo';
+      for (const b of tBusy[mid][d]) if (s.ini<b[1] && b[0]<s.fin) return 'choque';
+      if (+m.maxDia && tDay[mid][d] >= +m.maxDia) return 'maxmaestro';
+    }
+    const c = conf(L), ya = sd(L)[d];
+    if (ya.length >= (+c.maxDia||1)) return 'maxdia';
+    if (c.doble && ya.length){
+      const ok = ya.some(n => { const o = g0.slots[n-1]; return o && (o.fin===s.ini || s.fin===o.ini); });
+      if (!ok) return 'doble';
+    }
+    for (const r of reglas){
+      const hit = (r.tipo==='asignatura'&&r.obj===L.sid) || (r.tipo==='maestro'&&L.mids.includes(r.obj)) || (r.tipo==='grupo'&&L.gids.includes(r.obj));
+      if (!hit) continue;
+      const dias = arr(r.dias), mods = arr(r.mods);
+      if (r.cond==='noDias' && dias.includes(d)) return 'regla';
+      if (r.cond==='soloDias' && !dias.includes(d)) return 'regla';
+      if (r.cond==='noMods' && mods.includes(s.n)) return 'regla';
+      if (r.cond==='soloMods' && !mods.includes(s.n)) return 'regla';
+      if (r.cond==='noUltimo' && s.n===g0.slots.length) return 'regla';
+    }
+    return null;
+  }
+  function place(L,d,s){
+    L.gids.forEach(g => grid[g][d][s.n-1] = L.aid);
+    L.mids.forEach(m => { tBusy[m][d].push([s.ini,s.fin,L.gids[0],L.aid]); tDay[m][d]++; });
+    sd(L)[d].push(s.n);
+  }
+  function unplace(L,d,s){
+    L.gids.forEach(g => grid[g][d][s.n-1] = null);
+    L.mids.forEach(m => { const a = tBusy[m][d], i = a.findIndex(b => b[0]===s.ini && b[3]===L.aid); if (i>=0) a.splice(i,1); tDay[m][d]--; });
+    const q = sd(L)[d], j = q.indexOf(s.n); if (j>=0) q.splice(j,1);
+  }
+  return {G,T,grid,tBusy,tDay,tBlock,sd,check,place,unplace,dur};
+}
+function puntaje(E,L,d,s,rand){
+  const mismo = E.sd(L)[d].length, cargaDia = E.grid[L.gids[0]][d].filter(Boolean).length;
+  let sc = mismo*20 + cargaDia*1.5 + s.n*0.35 + rand()*4;
+  for (const mid of L.mids){
+    const busy = E.tBusy[mid][d];
+    if (busy.length){ if (busy.some(b => b[1]===s.ini || b[0]===s.fin)) sc -= 3/L.mids.length; } else sc += 2/L.mids.length;
+  }
+  return sc;
+}
+function candidatos(E,L,rand){
+  const c = [], g = E.G[L.gids[0]];
+  for (let d=0; d<5; d++) for (const s of g.slots) if (!E.check(L,d,s)) c.push({d,s,sc:puntaje(E,L,d,s,rand)});
+  return c.sort((a,b) => a.sc-b.sc);
+}
+function intento(E, lessons, budget, rand){
+  // Orden: primero bloques y clases con menos opciones, luego maestros más cargados
+  const dom = {}, carga = {}, rk = {}, hrs = {};
+  lessons.forEach(L => { L.mids.forEach(m => carga[m]=(carga[m]||0)+1); hrs[L.aid]=(hrs[L.aid]||0)+1; });
+  const cm = L => Math.max(0, ...L.mids.map(m => carga[m]||0));
+  lessons.forEach(L => { if (dom[L.aid]==null){ let c=0; for (let d=0; d<5; d++) for (const s of E.G[L.gids[0]].slots) if (!E.check(L,d,s)) c++; dom[L.aid]=c/hrs[L.aid]/(L.bloque?4:1); rk[L.aid]=rand(); } });
+  const orden = [...lessons].sort((a,b) => (dom[a.aid]-dom[b.aid]) || (cm(b)-cm(a)) || (rk[a.aid]-rk[b.aid]));
+  let nodos = 0, mejorN = -1, mejor = [];
+  const pl = new Array(orden.length);
+  function rec(i){
+    if (i > mejorN){ mejorN = i; mejor = pl.slice(0,i); }
+    if (i === orden.length) return true;
+    if (++nodos > budget) return false;
+    const L = orden[i];
+    for (const x of candidatos(E,L,rand)){
+      E.place(L,x.d,x.s); pl[i] = x;
+      if (rec(i+1)) return true;
+      E.unplace(L,x.d,x.s);
+      if (nodos > budget) return false;
+    }
+    return false;
+  }
+  if (rec(0)) return {E, faltan:[]};
+  for (let i=0; i<mejorN; i++) E.place(orden[i], mejor[i].d, mejor[i].s);
+  let faltan = [];
+  for (let i=mejorN; i<orden.length; i++){
+    const L = orden[i], c = candidatos(E,L,rand);
+    if (c.length) E.place(L,c[0].d,c[0].s); else faltan.push(L);
+  }
+  for (let pasada=0; pasada<2 && faltan.length; pasada++) faltan = faltan.filter(L => !reparar(E,L,rand));
+  return {E, faltan};
+}
+function reparar(E,L,rand){
+  const g = E.G[L.gids[0]];
+  // 1) Mover la clase que ocupa el módulo en el grupo
+  for (let d=0; d<5; d++) for (const s of g.slots){
+    const occ = [...new Set(L.gids.map(gid => E.grid[gid][d][s.n-1]).filter(Boolean))];
+    if (occ.length !== 1) continue;
+    const X = lessonOf(occ[0]); if (!X) continue;
+    E.unplace(X,d,s);
+    if (!E.check(L,d,s)){
+      E.place(L,d,s);
+      const alt = candidatos(E,X,rand).filter(c => !(c.d===d && c.s.n===s.n));
+      if (alt.length){ E.place(X,alt[0].d,alt[0].s); return true; }
+      E.unplace(L,d,s);
+    }
+    E.place(X,d,s);
+  }
+  // 2) El grupo tiene hueco pero un maestro está ocupado: mover esa otra clase
+  for (let d=0; d<5; d++) for (const s of g.slots){
+    if (L.gids.some(gid => E.grid[gid][d][s.n-1])) continue;
+    const ch = []; L.mids.forEach(m => E.tBusy[m][d].forEach(b => { if (s.ini<b[1] && b[0]<s.fin) ch.push(b); }));
+    const aids = [...new Set(ch.map(b => b[3]))];
+    if (aids.length !== 1) continue;
+    const Y = lessonOf(aids[0]); if (!Y) continue;
+    const os = E.G[Y.gids[0]].slots.find(x => x.ini===ch[0][0]); if (!os) continue;
+    E.unplace(Y,d,os);
+    if (!E.check(L,d,s)){
+      E.place(L,d,s);
+      const alt = candidatos(E,Y,rand).filter(c => !(c.d===d && c.s.n===os.n));
+      if (alt.length){ E.place(Y,alt[0].d,alt[0].s); return true; }
+      E.unplace(L,d,s);
+    }
+    E.place(Y,d,os);
+  }
+  return false;
+}
+// Búsqueda local con cadenas de expulsión: coloca una clase pendiente sacando las que estorban y reacomodándolas después
+function fotoE(E){
+  const out = [], seen = new Set();
+  for (const gid in E.grid) E.grid[gid].forEach((dia,d) => dia.forEach((aid,i) => {
+    if (!aid) return;
+    const k = String(aid).startsWith('B:') ? `${aid}|${d}|${i}` : `${aid}|${d}|${i}|${gid}`;
+    if (!seen.has(k)){ seen.add(k); out.push([aid,d,i,gid]); }
+  }));
+  return out;
+}
+function restaurarE(foto){
+  const E = makeEngine();
+  foto.forEach(([aid,d,i,gid]) => { const L = lessonOf(aid); if (L && E.G[gid]) E.place(L,d,E.G[gid].slots[i]); });
+  return E;
+}
+function estorban(E,L,d,s){
+  const out = [], vistos = new Set();
+  for (const gid of L.gids){
+    const aid = E.grid[gid][d][s.n-1];
+    if (aid && !vistos.has(aid+'|'+s.ini)){ vistos.add(aid+'|'+s.ini); out.push({Y:lessonOf(aid), d, s:E.G[gid].slots[s.n-1]}); }
+  }
+  for (const mid of L.mids) for (const b of E.tBusy[mid][d]){
+    if (!(s.ini<b[1] && b[0]<s.fin) || vistos.has(b[3]+'|'+b[0])) continue;
+    vistos.add(b[3]+'|'+b[0]);
+    const Y = lessonOf(b[3]); if (!Y) continue;
+    const os = E.G[Y.gids[0]].slots.find(x => x.ini===b[0]); if (os) out.push({Y, d, s:os});
+  }
+  return out;
+}
+async function busquedaLocal(E, pend, rand, iters, progreso){
+  let mejor = pend.length, foto = fotoE(E), pendMejor = [...pend];
+  const tabu = new Map(), cargaM = {};
+  for (const mid in E.tBusy) cargaM[mid] = E.tBusy[mid].reduce((a,x) => a+x.length, 0);
+  pend.forEach(L => L.mids.forEach(m => cargaM[m] = (cargaM[m]||0)+1));
+  const peso = Y => (Y.bloque ? 3 : 1) + Math.max(0, ...Y.mids.map(m => cargaM[m]||0)) / 15;
+  for (let it=0; it<iters && pend.length; it++){
+    if (it % 1500 === 0){ progreso(it, mejor); await new Promise(r => setTimeout(r,0)); }
+    const pi = Math.floor(rand()*pend.length), L = pend[pi], g = E.G[L.gids[0]];
+    let elegido = null, costoMin = Infinity;
+    for (let d=0; d<5; d++) for (const s of g.slots){
+      const esto = estorban(E,L,d,s);
+      if (esto.some(x => !x.Y)) continue;
+      esto.forEach(x => E.unplace(x.Y,x.d,x.s));
+      let r = E.check(L,d,s);
+      let mismos = [];
+      if (r==='maxdia' || r==='doble'){
+        // También se pueden sacar las otras horas de la misma asignatura ese día para reacomodarlas
+        mismos = E.sd(L)[d].slice().map(n => ({Y:lessonOf(E.grid[L.gids[0]][d][n-1]), d, s:g.slots[n-1]}))
+          .filter(x => x.Y && !esto.some(e => e.d===x.d && e.s.ini===x.s.ini && e.Y.aid===x.Y.aid));
+        mismos.forEach(x => E.unplace(x.Y,x.d,x.s));
+        r = E.check(L,d,s);
+        mismos.forEach(x => E.place(x.Y,x.d,x.s));
+      }
+      esto.forEach(x => E.place(x.Y,x.d,x.s));
+      if (!r) esto.push(...mismos);
+      if (r) continue;
+      const t = tabu.get(`${L.aid}|${d}|${s.n}`) || 0;
+      let costo = esto.reduce((c,x) => c + peso(x.Y), 0) + rand()*1.5 + (t > it ? 50 : 0);
+      if (costo < costoMin){ costoMin = costo; elegido = {d,s,esto}; }
+    }
+    if (!elegido) continue;
+    elegido.esto.forEach(x => { E.unplace(x.Y,x.d,x.s); tabu.set(`${x.Y.aid}|${x.d}|${x.s.n}`, it + 8 + Math.floor(rand()*12)); });
+    E.place(L,elegido.d,elegido.s);
+    pend.splice(pi,1);
+    elegido.esto.forEach(x => {
+      const c = candidatos(E,x.Y,rand);
+      if (c.length) E.place(x.Y,c[0].d,c[0].s); else pend.push({...x.Y});
+    });
+    if (pend.length < mejor){ mejor = pend.length; foto = fotoE(E); pendMejor = [...pend]; }
+  }
+  return pend.length <= mejor ? {E, faltan:pend} : {E:restaurarE(foto), faltan:pendMejor};
+}
+function asignarLibres(E){
+  const mapa = {}, avisos = [];
+  for (const [mid,m] of Object.entries(S.maestros)){
+    if (!m.libres) continue;
+    const n = +m.numLibres || 3, rows = filas(turnosDe(m)), cand = [];
+    for (let d=0; d<5; d++){
+      const busy = E.tBusy[mid][d], blk = E.tBlock[mid][d];
+      for (const r of rows){
+        if (busy.some(b => r.ini<b[1] && b[0]<r.fin) || blk.some(b => r.ini<b[1] && b[0]<r.fin)) continue;
+        const antes = busy.some(b => b[1] <= r.ini), despues = busy.some(b => b[0] >= r.fin);
+        const toca = busy.some(b => b[1]===r.ini || b[0]===r.fin);
+        const sc = (antes&&despues) ? 0 : toca ? 4 : busy.length ? 8 : 20;
+        cand.push({d,r,sc:sc+Math.random()});
+      }
+    }
+    cand.sort((a,b) => a.sc-b.sc);
+    const elegidos = [], diasUsados = new Set();
+    for (const c of cand){ if (elegidos.length>=n) break; if (!diasUsados.has(c.d)){ elegidos.push(c); diasUsados.add(c.d); } }
+    for (const c of cand){ if (elegidos.length>=n) break; if (!elegidos.includes(c)) elegidos.push(c); }
+    if (elegidos.length < n) avisos.push(`${m.nombre}: solo se pudieron asignar ${elegidos.length} de ${n} horas libres.`);
+    if (elegidos.length){ mapa[mid] = {}; elegidos.forEach(c => mapa[mid][`${c.d}-${c.r.ini}`] = true); }
+  }
+  return {mapa, avisos};
+}
+function firma(){
+  const s = JSON.stringify([S.config,S.maestros,S.asignaturas,S.grupos,S.asignaciones,S.reglas,S.bloques]);
+  let h = 5381; for (let i=0; i<s.length; i++) h = ((h*33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+/* ===================== DIAGNÓSTICO Y GENERACIÓN ===================== */
+function diagnostico(){
+  const err = [], av = [];
+  TURNOS.forEach(t => { if (calcSlots(S.config,t).er.length) err.push(`Corrige el turno ${nomTurno(t).toLowerCase()} en el paso 1.`); });
+  if (!asigValidas().length && !bloquesDe().length) err.push('Aún no hay carga académica: asigna materias a los maestros en el paso 5.');
+  gruposOrden().forEach(([gid,g]) => {
+    const cap = slotsTurno(g.turno).length*5, hr = horasGrupo(gid);
+    if (!hr) av.push(`${gName(g)} no tiene asignaturas.`);
+    else if (hr > cap) err.push(`${gName(g)} tiene ${hr} horas asignadas y solo caben ${cap} en su turno.`);
+    else if (hr < cap) av.push(`${gName(g)}: quedarán ${cap-hr} módulos sin clase en la semana.`);
+  });
+  maestrosOrden().forEach(([mid,m]) => {
+    const fg = horasMaestro(mid), lib = libresDe(m), c = +m.horasContrato||0;
+    if (!fg){ av.push(`${m.nombre} no tiene grupos asignados.`); return; }
+    if (fg+lib > c) err.push(`${m.nombre}: ${fg} h frente a grupo${lib?` + ${lib} libres`:''} superan sus ${c} h de trabajo.`);
+    else if (fg+lib < c) av.push(`${m.nombre}: le quedan ${c-fg-lib} h de su contrato sin asignar.`);
+    const disp = filas(turnosDe(m)).length*5 - Object.keys(m.bloqueos||{}).length;
+    if (fg+lib > disp) err.push(`${m.nombre} necesita ${fg+lib} módulos pero solo está disponible en ${disp}.`);
+    if (+m.maxDia && fg > m.maxDia*5) err.push(`${m.nombre}: ${fg} clases no caben con máximo ${m.maxDia} por día.`);
+  });
+  const vistos = {};
+  asigValidas().forEach(([,a]) => {
+    const s = S.asignaturas[a.asignaturaId], g = S.grupos[a.grupoId], m = S.maestros[a.maestroId], h = horasDe(a);
+    if (m.turnos && m.turnos[g.turno]===false) err.push(`${m.nombre} tiene ${s.nombre} en ${gName(g)}, pero no trabaja en el turno ${nomTurno(g.turno).toLowerCase()}.`);
+    if (h > (s.maxDia||1)*5) err.push(`${s.nombre} en ${gName(g)}: ${h} horas no caben con máximo ${s.maxDia||1} por día.`);
+    const k = a.grupoId+'|'+a.asignaturaId;
+    if (vistos[k]) av.push(`${gName(g)} tiene ${s.nombre} asignada a más de un maestro.`); vistos[k] = true;
+  });
+  bloquesDe().forEach(([bid,b]) => {
+    const L = lessonOf('B:'+bid), nom = `${b.nombre} ${bloqueEtiqueta(b)}`.trim();
+    if (!L){ err.push(`El bloque ${b.nombre} no tiene grupos.`); return; }
+    const t0 = S.grupos[L.gids[0]].turno;
+    if (L.gids.some(g => S.grupos[g].turno !== t0)) err.push(`${nom}: sus grupos son de turnos distintos.`);
+    if (!L.mids.length) av.push(`${nom} no tiene maestros de taller.`);
+    if (+b.horas > (+b.maxDia||1)*5) err.push(`${nom}: ${b.horas} horas no caben con máximo ${b.maxDia||1} por día.`);
+    L.mids.forEach(mid => { const m = S.maestros[mid]; if (m.turnos && m.turnos[t0]===false) err.push(`${m.nombre} tiene taller en ${nom}, pero no trabaja en el turno ${nomTurno(t0).toLowerCase()}.`); });
+  });
+  return {err, av};
+}
+function sesionesTotales(){ return asigValidas().reduce((s,[,a]) => s+horasDe(a), 0) + bloquesDe().reduce((s,[bid,b]) => s+(lessonOf('B:'+bid) ? (+b.horas||0) : 0), 0); }
+function renderDiag(){
+  const {err, av} = diagnostico();
+  let h = `<div class="stats"><div><b>${sesionesTotales()}</b>sesiones por acomodar</div><div><b>${Object.keys(S.grupos).length}</b>grupos</div><div><b>${Object.keys(S.maestros).length}</b>maestros</div><div><b>${bloquesDe().length}</b>bloques de talleres</div><div><b>${Object.keys(S.reglas).length}</b>condicionantes</div></div>`;
+  if (!err.length && !av.length) h += '<div class="note ok">Todo listo. No se encontraron problemas.</div>';
+  if (err.length) h += `<h3 style="color:var(--mal)">Hay que corregir (${err.length})</h3><ul class="e">${err.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  if (av.length) h += `<h3 style="margin-top:14px;color:var(--aviso)">Avisos (${av.length})</h3><ul class="a">${av.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  $('#diag').innerHTML = h;
+}
+let corriendo = false;
+async function generar(){
+  if (corriendo) return;
+  const d = diagnostico();
+  if (d.err.length && !confirm(`El diagnóstico tiene ${d.err.length} problema(s). El horario puede quedar incompleto. ¿Generar de todos modos?`)) return;
+  const lessons = [];
+  for (const aid in S.asignaciones){ const L = lessonOf(aid); if (!L) continue; const h = horasDe(S.asignaciones[aid]); for (let i=0; i<h; i++) lessons.push({...L}); }
+  for (const [bid,b] of bloquesDe()){ const L = lessonOf('B:'+bid); if (!L) continue; for (let i=0; i<(+b.horas||0); i++) lessons.push({...L}); }
+  if (!lessons.length) return toast('No hay clases que acomodar. Registra la carga académica.','err');
+  corriendo = true; $('#gRun').disabled = true;
+  const tries = Math.max(1, Math.min(200, +$('#gIntentos').value || 30));
+  const seed = Date.now() % 1000003; let best = null;
+  for (let t=0; t<tries; t++){
+    const res = intento(makeEngine(), lessons, 30000, mulberry32(seed + t*7919));
+    if (!best || res.faltan.length < best.faltan.length) best = res;
+    $('#gProg').innerHTML = `<div class="bar big"><i style="width:${(t+1)/tries*100}%"></i></div><p class="hint">Intento ${t+1} de ${tries}: mejor resultado ${lessons.length-best.faltan.length} de ${lessons.length} sesiones colocadas.</p>`;
+    await new Promise(r => setTimeout(r, 0));
+    if (!best.faltan.length) break;
+  }
+  if (best.faltan.length){
+    const total = lessons.length;
+    best = await busquedaLocal(best.E, best.faltan, mulberry32(seed+1), 200000, (it,m) => {
+      $('#gProg').innerHTML = `<div class="bar big"><i style="width:${Math.min(100,it/2000)}%"></i></div><p class="hint">Reacomodando clases: ${total-m} de ${total} sesiones colocadas.</p>`;
+    });
+  }
+  const E = best.E;
+  const lib = asignarLibres(E);
+  const clases = {};
+  for (const gid in E.grid) E.grid[gid].forEach((dia,d) => dia.forEach((aid,i) => { if (aid) (clases[gid] ??= {})[`${d}-${i+1}`] = aid; }));
+  const falt = {};
+  best.faltan.forEach(L => { (falt[L.aid] ??= {aid:L.aid, n:0, motivo:''}).n++; });
+  Object.values(falt).forEach(f => {
+    const L = lessonOf(f.aid), g = E.G[L.gids[0]], tally = {};
+    for (let d=0; d<5; d++) for (const s of g.slots){ const r = E.check(L,d,s); if (r && r!=='grupo') tally[r]=(tally[r]||0)+1; }
+    const top = Object.entries(tally).sort((a,b) => b[1]-a[1])[0];
+    f.motivo = top ? MOT[top[0]] : MOT.grupo;
+  });
+  const gen = {fecha:Date.now(), firma:firma(), total:lessons.length, colocadas:lessons.length-best.faltan.length,
+    clases, libres:lib.mapa, avisosLibres:lib.avisos, faltantes:Object.values(falt)};
+  try { await db.ref(`${ROOT}/generado`).set(gen); toast(best.faltan.length ? 'Horario generado con clases pendientes. Revisa el resultado.' : 'Horario generado completo.', best.faltan.length?'err':'ok'); }
+  catch(e){ toast('No se pudo guardar el horario: '+e.message,'err'); }
+  corriendo = false; $('#gRun').disabled = false;
+}
+function renderResultado(){
+  const g = S.generado;
+  if (!g){ $('#gRes').innerHTML=''; return; }
+  const falt = arr(g.faltantes), av = arr(g.avisosLibres), completo = !falt.length;
+  let h = `<div class="panel"><h3>Último horario generado</h3><p class="hint" style="margin-top:-8px">${new Date(g.fecha).toLocaleString('es-MX',{dateStyle:'long',timeStyle:'short'})}</p>`;
+  if (g.firma !== firma()) h += '<div class="note warn">Cambiaste datos después de generar este horario. Genera de nuevo para que lo refleje.</div>';
+  h += `<div class="note ${completo?'ok':'bad'}">${g.colocadas} de ${g.total} sesiones colocadas.${completo?' El horario está completo.':''}</div>`;
+  if (falt.length){
+    h += '<h3>Sesiones sin acomodar</h3><ul class="msgs">' + falt.map(f => {
+      if (String(f.aid).startsWith('B:')){ const b = S.bloques[f.aid.slice(2)]; if (!b) return '';
+        return `<li><b>${esc(b.nombre)} ${esc(bloqueEtiqueta(b))}</b> (bloque de talleres): faltan ${f.n} h. Causa probable: ${esc(f.motivo)}.</li>`; }
+      const a = S.asignaciones[f.aid]; if (!a) return '';
+      return `<li><b>${esc(S.asignaturas[a.asignaturaId]?.nombre)}</b> de ${esc(S.maestros[a.maestroId]?.nombre)} en ${gName(S.grupos[a.grupoId])}: faltan ${f.n} h. Causa probable: ${esc(f.motivo)}.</li>`;
+    }).join('') + '</ul><p class="hint">Prueba con más intentos, libera disponibilidad del maestro o afloja alguna condicionante.</p>';
+  }
+  if (av.length) h += '<h3 style="margin-top:14px">Horas libres</h3><ul class="msgs">' + av.map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';
+  h += `<div class="acts"><button class="btn pri" data-go="horarios">Ver vista previa</button><button class="btn del" id="gBorrar">Borrar horario generado</button></div></div>`;
+  $('#gRes').innerHTML = h;
+}
+
+/* ===================== HOJAS DE HORARIO (vista previa e impresión) ===================== */
+let hModo = 'grupo', selCell = null;
+function colorGrupo(gid){ const i = gruposOrden().findIndex(([id]) => id===gid); return `hsl(${(i*67)%360} 72% 76%)`; }
+// Tabla semanal con todas las horas de ambos turnos; une en una sola celda las horas seguidas de la misma clase
+function tablaHoja(titulo, celdaDe, o={}){
+  const rows = conReceso(filas(TURNOS)), R = rows.filter(r => !r.receso);
+  const M = DIAS.map((_,d) => R.map(r => celdaDe(d,r) || {}));
+  const span = DIAS.map(() => R.map(() => 1)), skip = DIAS.map(() => R.map(() => false));
+  if (!o.sinUnir) for (let d=0; d<5; d++) for (let i=0; i<R.length; i++){
+    if (skip[d][i] || !M[d][i].key) continue;
+    let j = i;
+    while (j+1 < R.length && M[d][j+1].key===M[d][i].key && R[j].fin===R[j+1].ini){ j++; skip[d][j] = true; }
+    span[d][i] = j-i+1;
+  }
+  const num = o.numerar ? '<th class="ht-n"></th>' : '';
+  let h = `<table class="ht${o.centro?' centro':''}"><colgroup>${o.numerar?'<col style="width:.35in">':''}<col style="width:.6in">${'<col>'.repeat(5)}</colgroup><thead><tr><th class="ht-title" colspan="${o.numerar?7:6}">${esc(titulo)}</th></tr><tr>${num}<th class="ht-h"></th>${DIAS.map(d=>`<th class="ht-d">${d}</th>`).join('')}</tr></thead><tbody>`;
+  let i = 0;
+  rows.forEach(r => {
+    if (r.receso){ h += `<tr class="ht-rec">${num}<th class="ht-h">${fmt(toMin(S.config.recesoIni))}<br>${fmt(toMin(S.config.recesoFin))}</th><td colspan="5">recreo</td></tr>`; return; }
+    const k = i++;
+    h += `<tr>${o.numerar?`<th class="ht-n">${k+1}</th>`:''}<th class="ht-h">${fmt(r.ini)}<br>${fmt(r.fin)}</th>`;
+    for (let d=0; d<5; d++){
+      if (skip[d][k]) continue;
+      const c = M[d][k];
+      h += `<td${span[d][k]>1?` rowspan="${span[d][k]}"`:''}${c.cls?` class="${c.cls}"`:''}${c.color?` style="--c:${c.color}"`:''}${c.attrs||''}>${c.html||''}</td>`;
+    }
+    h += '</tr>';
+  });
+  return h + '</tbody></table>';
+}
+function resumenHoja(lect, enc, filasR){
+  return `<table class="hr"><colgroup><col class="c1"><col><col></colgroup><tbody>
+    <tr><td class="nb"></td><td colspan="2" class="lect">Lectivas: ${lect}</td></tr>
+    <tr class="hh"><td class="pt">Periodos totales ${lect}</td><td>${enc[0]}</td><td>${enc[1]}</td></tr>
+    ${filasR.map(f => `<tr><td>${f[0]}</td><td>${esc(f[1])}</td><td${f[3]?` class="cc" style="--c:${f[3]}"`:''}>${esc(f[2])}</td></tr>`).join('')}</tbody></table>`;
+}
+function hojaGrupo(gid, ajuste=false){
+  const g = S.grupos[gid]; if (!g) return '';
+  const cl = S.generado?.clases?.[gid] || {};
+  const porIni = new Map(slotsTurno(g.turno).map(s => [s.ini, s]));
+  const tabla = tablaHoja(gName(g), (d,r) => {
+    const s = porIni.get(r.ini); if (!s) return {};
+    const aid = cl[`${d}-${s.n}`];
+    const attrs = ajuste ? ` data-d="${d}" data-n="${s.n}" tabindex="0"` : '';
+    const extra = ajuste ? ' pick' + (selCell && selCell.d===d && selCell.n===s.n ? ' sel' : '') : '';
+    if (!aid) return {cls:extra.trim(), attrs};
+    if (String(aid).startsWith('B:')){ const b = S.bloques[aid.slice(2)]; return {key:aid, cls:'blk'+extra, attrs, html:`<div class="big">${esc((b?.nombre||'BLOQUE').toUpperCase())}</div>`}; }
+    const a = S.asignaciones[aid]; if (!a) return {cls:extra.trim(), attrs, html:'<b>(eliminada)</b>'};
+    const su = S.asignaturas[a.asignaturaId], m = S.maestros[a.maestroId];
+    return {key:aid, cls:'cs'+extra, attrs, color:su?.color, html:`<b>${esc(subCorto(su))}</b><span>${esc(aliasDe(m))}</span>`};
+  }, {sinUnir:ajuste});
+  const cnt = {};
+  Object.values(cl).forEach(aid => { if (S.asignaciones[aid]) cnt[aid] = (cnt[aid]||0)+1; });
+  const items = Object.entries(cnt).map(([aid,n]) => { const a = S.asignaciones[aid]; return {n, m:S.maestros[a.maestroId], s:S.asignaturas[a.asignaturaId]}; })
+    .sort((x,y) => cmp(x.m?.nombre||'', y.m?.nombre||'') || cmp(x.s?.nombre||'', y.s?.nombre||''));
+  let prev = null;
+  const filasR = items.map(it => { const t = `${(it.m?.nombre||'').toUpperCase()} (${aliasDe(it.m)})`; const r = [it.n, t===prev ? "''" : t, subLargo(it.s), it.s?.color]; prev = t; return r; });
+  return `<section class="hoja"><p class="h-cap">Horario semanal: Grupos de alumnos</p>${tabla}${resumenHoja(items.reduce((s,x)=>s+x.n,0), ['Profesores','Materias'], filasR)}</section>`;
+}
+function indiceMaestro(mid){
+  const idx = {}, cl = S.generado?.clases || {};
+  for (const gid in cl){
+    const g = S.grupos[gid]; if (!g) continue;
+    const sl = slotsTurno(g.turno);
+    for (const k in cl[gid]){
+      const aid = cl[gid][k]; let v = null;
+      if (String(aid).startsWith('B:')){ const b = S.bloques[aid.slice(2)]; if (b?.talleres?.[mid]) v = {aid, bloque:true, bid:aid.slice(2)}; }
+      else { const a = S.asignaciones[aid]; if (a && a.maestroId===mid) v = {aid}; }
+      if (!v) continue;
+      const [d,n] = k.split('-').map(Number), s = sl[n-1];
+      if (s) idx[`${d}-${s.ini}`] = v;
+    }
+  }
+  return idx;
+}
+function hojaMaestro(mid){
+  const m = S.maestros[mid]; if (!m) return '';
+  const idx = indiceMaestro(mid), lib = S.generado?.libres?.[mid] || {};
+  const tabla = tablaHoja((m.nombre||'').toUpperCase(), (d,r) => {
+    const k = `${d}-${r.ini}`, v = idx[k];
+    if (v && v.bloque){ const b = S.bloques[v.bid]; return {key:v.aid, cls:'cs', color:b?.color, html:`<b>${esc((b?.talleres?.[mid]||b?.nombre||'').toUpperCase())}</b><span>${esc(bloqueEtiqueta(b,'º'))}</span>`}; }
+    if (v){ const a = S.asignaciones[v.aid]; return {key:v.aid, cls:'cs', color:colorGrupo(a.grupoId), html:`<b>${esc(subCorto(S.asignaturas[a.asignaturaId]))}</b><span>${esc(gName(S.grupos[a.grupoId]))}</span>`}; }
+    if (lib[k]) return {cls:'libre', html:'<b>HORA LIBRE</b>'};
+    return {};
+  }, {centro:true});
+  const cnt = {};
+  Object.values(idx).forEach(v => { cnt[v.aid] = (cnt[v.aid]||0)+1; });
+  const items = Object.entries(cnt).map(([aid,n]) => {
+    if (aid.startsWith('B:')){ const b = S.bloques[aid.slice(2)]; return {n, mat:(b.talleres?.[mid]||b.nombre||'').toUpperCase(), grp:bloqueEtiqueta(b,'º'), color:b.color}; }
+    const a = S.asignaciones[aid]; return {n, mat:subLargo(S.asignaturas[a.asignaturaId]), grp:gName(S.grupos[a.grupoId]), color:colorGrupo(a.grupoId)};
+  }).sort((x,y) => cmp(x.mat,y.mat) || cmp(x.grp,y.grp));
+  let prev = null;
+  const filasR = items.map(it => { const r = [it.n, it.mat===prev ? "''" : it.mat, it.grp, it.color]; prev = it.mat; return r; });
+  const nl = Object.keys(lib).length;
+  if (nl) filasR.push([nl, 'HORAS LIBRES', '', null]);
+  return `<section class="hoja"><p class="h-cap">Horario semanal: Profesores</p>${tabla}${resumenHoja(items.reduce((s,x)=>s+x.n,0), ['Materias','Grupos de alumnos'], filasR)}</section>`;
+}
+function nombresBloque(){ return [...new Set(bloquesDe().map(([,b]) => (b.nombre||'BLOQUE').toUpperCase()))].sort(cmp); }
+function hojaBloques(nombre){
+  const bids = bloquesDe().filter(([,b]) => (b.nombre||'BLOQUE').toUpperCase()===nombre);
+  const mapa = {}, cl = S.generado?.clases || {};
+  bids.forEach(([bid]) => {
+    const L = lessonOf('B:'+bid); if (!L) return;
+    const g0 = L.gids[0], sl = slotsTurno(S.grupos[g0].turno);
+    for (const k in (cl[g0]||{})) if (cl[g0][k]==='B:'+bid){ const [d,n] = k.split('-').map(Number), s = sl[n-1]; if (s) (mapa[`${d}-${s.ini}`] ??= []).push(bid); }
+  });
+  const tabla = tablaHoja(nombre, (d,r) => {
+    const l = mapa[`${d}-${r.ini}`]; if (!l) return {};
+    return {cls:'cs mid', color:S.bloques[l[0]].color, html:l.map(id => `${esc(nombre)} ${esc(bloqueEtiqueta(S.bloques[id]))}`).join('<br>')};
+  }, {numerar:true, sinUnir:true, centro:true});
+  const t = {};
+  bids.forEach(([,b]) => Object.entries(b.talleres||{}).forEach(([mid,tal]) => {
+    if (!S.maestros[mid]) return;
+    const e = t[mid+'|'+tal] ??= {mid, tal, gr:{}};
+    Object.keys(b.grupos||{}).forEach(gid => { const g = S.grupos[gid]; if (g) (e.gr[g.grado] ??= new Set()).add(g.grupo); });
+  }));
+  const grados = [...new Set(Object.values(S.grupos).map(g => +g.grado))].sort((a,b) => a-b);
+  const filasT = Object.values(t).sort((a,b) => cmp(S.maestros[a.mid].nombre, S.maestros[b.mid].nombre) || cmp(a.tal,b.tal))
+    .map(e => `<tr><td>${esc(S.maestros[e.mid].nombre.toUpperCase())}</td><td>${esc(e.tal)}</td>${grados.map(gr => `<td>${e.gr[gr] ? gr+[...e.gr[gr]].sort(cmp).join('') : ''}</td>`).join('')}</tr>`).join('');
+  return `<section class="hoja land">${tabla}${filasT?`<table class="htal"><tbody>${filasT}</tbody></table>`:''}</section>`;
+}
+function listaHojas(ajuste){
+  const v = $('#hSel').value;
+  if (hModo==='grupo') return (v==='*' ? gruposOrden().map(([id]) => id) : [v]).filter(Boolean).map(id => hojaGrupo(id, ajuste && v!=='*'));
+  if (hModo==='maestro') return (v==='*' ? maestrosOrden().map(([id]) => id) : [v]).filter(Boolean).map(hojaMaestro);
+  return (v==='*' ? nombresBloque() : [v]).filter(Boolean).map(hojaBloques);
+}
+function ajustarZoom(){
+  const w = $('#hGrid').clientWidth - 24;
+  $$('#hGrid .hoja').forEach(p => { p.style.zoom = ''; const pw = p.offsetWidth; if (pw > w && w > 0) p.style.zoom = (w/pw).toFixed(3); });
+}
+function renderHorario(){
+  ['grupo','maestro','bloque'].forEach(m => $('#t-'+m).classList.toggle('on', hModo===m));
+  const items = hModo==='grupo' ? [['*','Todos los grupos'], ...gruposOrden().map(([id,g]) => [id, `${gName(g)} (${nomTurno(g.turno)})`])]
+    : hModo==='maestro' ? [['*','Todos los profesores'], ...maestrosOrden().map(([id,m]) => [id, m.nombre])]
+    : [['*','Todos los bloques'], ...nombresBloque().map(n => [n,n])];
+  fillSelect($('#hSel'), items);
+  if (!$('#hSel').value || ($('#hSel').value==='*' && !$('#hSel').dataset.elegido)) $('#hSel').value = items[1] ? items[1][0] : '*';
+  const gen = S.generado;
+  $('#hStale').innerHTML = gen && gen.firma !== firma() ? '<div class="note warn">Cambiaste datos después de generar este horario. Genera de nuevo para que lo refleje.</div>' : '';
+  const puedeAjustar = hModo==='grupo' && $('#hSel').value!=='*' && !!gen;
+  $('#hAjusteW').hidden = !puedeAjustar;
+  const ajuste = puedeAjustar && $('#hAjuste').checked;
+  $('#hHint').hidden = !ajuste;
+  $('#hGrid').classList.toggle('bn', !$('#hColor').checked);
+  if (!gen){ $('#hGrid').innerHTML = '<p class="empty" style="padding:20px">Todavía no hay horario. Ve al paso 7 y genéralo.</p>'; $('#hSum').textContent=''; return; }
+  const hojas = listaHojas(ajuste);
+  $('#hGrid').innerHTML = hojas.join('') || '<p class="empty" style="padding:20px">No hay registros para mostrar.</p>';
+  $('#hSum').textContent = hojas.length > 1 ? `${hojas.length} hojas listas para imprimir.` : '';
+  ajustarZoom();
+}
+function engineDesdeGenerado(){
+  const E = makeEngine(), gen = S.generado || {};
+  for (const gid in (gen.clases||{})){
+    if (!E.G[gid]) continue;
+    for (const k in gen.clases[gid]){
+      const L = lessonOf(gen.clases[gid][k]); if (!L) continue;
+      const [d,n] = k.split('-').map(Number), s = E.G[gid].slots[n-1];
+      if (s && !E.grid[gid][d][n-1]) E.place(L,d,s);
+    }
+  }
+  for (const mid in (gen.libres||{})) for (const k in gen.libres[mid]){
+    const [d,ini] = k.split('-').map(Number); if (E.tBlock[mid]?.[d]) E.tBlock[mid][d].push([ini,ini+E.dur]);
+  }
+  return E;
+}
+function mover(gid, A, B){
+  const cl = S.generado?.clases?.[gid] || {};
+  const kA = `${A.d}-${A.n}`, kB = `${B.d}-${B.n}`, aidA = cl[kA], aidB = cl[kB];
+  if (!aidA && !aidB) return;
+  if (String(aidA||'').startsWith('B:') || String(aidB||'').startsWith('B:')) return toast('Los bloques de talleres no se mueven a mano porque ocupan varios grupos. Genera de nuevo para reacomodarlos.','err');
+  const E = engineDesdeGenerado(), sl = E.G[gid].slots, sA = sl[A.n-1], sB = sl[B.n-1];
+  const LA = aidA && lessonOf(aidA), LB = aidB && lessonOf(aidB);
+  if (LA) E.unplace(LA,A.d,sA);
+  if (LB) E.unplace(LB,B.d,sB);
+  const nom = L => S.asignaturas[L.sid]?.nombre || 'la clase';
+  if (LA){ const r = E.check(LA,B.d,sB); if (r) return toast(`No se puede mover ${nom(LA)} al ${DIAS[B.d].toLowerCase()} módulo ${B.n}: ${MOT[r]}.`,'err'); E.place(LA,B.d,sB); }
+  if (LB){ const r = E.check(LB,A.d,sA); if (r) return toast(`No se puede mover ${nom(LB)} al ${DIAS[A.d].toLowerCase()} módulo ${A.n}: ${MOT[r]}.`,'err'); }
+  const u = {};
+  u[`${ROOT}/generado/clases/${gid}/${kA}`] = aidB || null;
+  u[`${ROOT}/generado/clases/${gid}/${kB}`] = aidA || null;
+  db.ref().update(u).then(() => toast(aidB ? 'Clases intercambiadas.' : 'Clase movida.'));
+}
+function imprimir(){
+  if (!S.generado) return toast('Primero genera el horario.','err');
+  const hojas = listaHojas(false);
+  if (!hojas.length) return toast('No hay nada que imprimir.','err');
+  const pa = $('#printArea');
+  pa.innerHTML = hojas.join('');
+  pa.classList.toggle('bn', !$('#hColor').checked);
+  window.print();
+}
+
+/* ===================== RENDER GENERAL ===================== */
+function renderNav(){
+  const cfgOk = !TURNOS.some(t => calcSlots(S.config,t).er.length);
+  const c = {config:cfgOk?'Listo':'Revisar', maestros:Object.keys(S.maestros).length, asignaturas:Object.keys(S.asignaturas).length,
+    grupos:Object.keys(S.grupos).length, carga:Object.keys(S.asignaciones).length + bloquesDe().length, reglas:Object.keys(S.reglas).length,
+    generar:S.generado ? `${S.generado.colocadas}/${S.generado.total}` : ''};
+  for (const k in c){ const el = $('#n-'+k); if (el) el.textContent = c[k] || ''; }
+  const done = {config:cfgOk, maestros:c.maestros>0, asignaturas:c.asignaturas>0, grupos:c.grupos>0, carga:c.carga>0, reglas:c.reglas>0, generar:!!S.generado && !arr(S.generado.faltantes).length, horarios:!!S.generado};
+  $$('#nav button').forEach(b => b.classList.toggle('done', !!done[b.dataset.v]));
+  $('#hdrEscuela').textContent = S.config.escuela ? `${S.config.escuela}, ciclo ${S.config.ciclo}` : `Ciclo ${S.config.ciclo}`;
+}
+function refrescar(){
+  renderNav(); renderMaestros(); renderAsignaturas(); renderGrupos(); renderCarga(); renderBloques(); renderReglas();
+  renderDiag(); renderResultado(); renderHorario();
+  if (!editM) renderBloq();
+}
+function show(v){
+  $$('.view').forEach(s => s.classList.toggle('on', s.id==='v-'+v));
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v===v));
+  $('#nav').classList.remove('open');
+  selCell = null;
+  if (v==='horarios') renderHorario();
+  if (v==='generar') renderDiag();
+  window.scrollTo(0,0);
+}
+
+/* ===================== CONEXIÓN ===================== */
+db.ref('.info/connected').on('value', s => { const on = !!s.val(); const el = $('#conn'); el.className = 'conn '+(on?'on':'off'); el.textContent = on ? 'En línea' : 'Sin conexión'; });
+db.ref(ROOT).on('value', snap => {
+  const v = snap.val() || {}, c = v.config || {};
+  S.config = {...clone(DEF), ...c, turnos:{matutino:{...DEF.turnos.matutino, ...(c.turnos?.matutino||{})}, mixto:{...DEF.turnos.mixto, ...(c.turnos?.mixto||{})}}};
+  S.maestros = v.maestros || {}; S.asignaturas = v.asignaturas || {}; S.grupos = v.grupos || {};
+  S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null;
+  if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); }
+  refrescar();
+}, err => toast('No se pudo leer la base de datos: '+err.message+'. Revisa las reglas de Realtime Database.','err'));
+
+/* ===================== EVENTOS ===================== */
+$('#nav').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (b) show(b.dataset.v); });
+$('#navBtn').onclick = () => $('#nav').classList.toggle('open');
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) show(g.dataset.go); });
+
+['cEscuela','cCiclo','cDur','cRI','cRF','cMI','cMF','cXI','cXF'].forEach(id => $('#'+id).addEventListener('input', () => renderCfgValid(readCfg())));
+$('#cSave').onclick = () => {
+  const cfg = readCfg();
+  if (renderCfgValid(cfg)) return toast('Corrige los errores marcados en rojo antes de guardar.','err');
+  db.ref(`${ROOT}/config`).set(cfg).then(() => toast('Configuración guardada.')).catch(e => toast('No se guardó: '+e.message,'err'));
+};
+$('#cReset').onclick = () => { const c = clone(DEF); c.escuela = $('#cEscuela').value; c.ciclo = $('#cCiclo').value || DEF.ciclo; fillCfg(c); toast('Horario de la escuela restaurado. Guarda para aplicarlo.'); };
+$('#bExport').onclick = () => {
+  const data = {config:S.config, maestros:S.maestros, asignaturas:S.asignaturas, grupos:S.grupos, asignaciones:S.asignaciones, reglas:S.reglas, bloques:S.bloques, generado:S.generado};
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)], {type:'application/json'}));
+  a.download = `horarios-respaldo-${new Date().toISOString().slice(0,10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+};
+$('#bImport').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const data = JSON.parse(rd.result);
+      if (!data.config) throw new Error('El archivo no parece un respaldo de horarios.');
+      if (!confirm('Esto reemplazará todos los datos actuales con los del respaldo. ¿Continuar?')) return;
+      db.ref(ROOT).set(data).then(() => { fillCfg({...clone(DEF), ...data.config}); toast('Respaldo importado.'); });
+    } catch(err){ toast('No se pudo importar: '+err.message,'err'); }
+    e.target.value = '';
+  };
+  rd.readAsText(f);
+};
+
+$('#mSave').onclick = saveM; $('#mCancel').onclick = resetM;
+$('#mBloqClear').onclick = () => { bloq = {}; renderBloq(); };
+$('#mTM').onchange = renderBloq; $('#mTX').onchange = renderBloq;
+$('#mBloq').onclick = e => { const b = e.target.closest('.bq'); if (!b) return; const k = b.dataset.k; if (bloq[k]) delete bloq[k]; else bloq[k] = true; renderBloq(); $(`#mBloq [data-k="${k}"]`)?.focus(); };
+$('#mList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a) editarM(a.dataset.edit); if (d) borrarM(d.dataset.del); };
+
+$('#aSave').onclick = saveA; $('#aCancel').onclick = resetA; $('#aSeed').onclick = seedA;
+$('#aList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a) editarA(a.dataset.edit); if (d) borrarA(d.dataset.del); };
+
+$('#gAdd').onclick = addGrupos;
+$('#gLetras').addEventListener('keydown', e => { if (e.key==='Enter') addGrupos(); });
+$('#gList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) borrarG(d.dataset.del); };
+$('#gList').onchange = e => { const s = e.target.closest('[data-turno]'); if (!s) return;
+  const g = S.grupos[s.dataset.turno];
+  const choca = asigValidas().filter(([,a]) => a.grupoId===s.dataset.turno).map(([,a]) => S.maestros[a.maestroId]).filter(m => m.turnos && m.turnos[s.value]===false);
+  db.ref(`${ROOT}/grupos/${s.dataset.turno}/turno`).set(s.value).then(() => toast(choca.length ? `${gName(g)} cambió de turno. Ojo: ${choca.map(m=>m.nombre).join(', ')} no trabaja(n) en ese turno.` : `${gName(g)} cambió de turno.`, choca.length?'err':'ok')); };
+
+$('#kMaestro').onchange = kInfo; $('#kAsig').onchange = kInfo; $('#kAdd').onclick = addCarga;
+$('#kFiltro').onchange = renderCarga;
+$('#kGrupos').onclick = e => { const b = e.target.closest('[data-grado]'); if (!b) return;
+  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); };
+$('#kList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/asignaciones/${d.dataset.del}`).remove().then(() => toast('Asignación quitada.')); };
+$('#kList').onchange = e => { const i = e.target.closest('[data-hor]'); if (!i) return;
+  const v = +i.value, a = S.asignaciones[i.dataset.hor], s = S.asignaturas[a?.asignaturaId];
+  if (v && s && v > (s.maxDia||1)*5){ toast(`${v} horas no caben con máximo ${s.maxDia||1} por día.`,'err'); i.value = a.horas||''; return; }
+  db.ref(`${ROOT}/asignaciones/${i.dataset.hor}/horas`).set(v>0 ? v : null).then(() => toast('Horas actualizadas.')); };
+
+$('#rTipo').onchange = renderReglaForm; $('#rCond').onchange = renderReglaForm; $('#rAdd').onclick = addRegla;
+$('#rList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/reglas/${d.dataset.del}`).remove().then(() => toast('Condicionante quitada.')); };
+
+$('#gRun').onclick = generar;
+$('#gRes').addEventListener('click', e => { if (e.target.id==='gBorrar' && confirm('¿Borrar el horario generado? Los datos capturados no se tocan.')) db.ref(`${ROOT}/generado`).remove().then(() => toast('Horario borrado.')); });
+
+['grupo','maestro','bloque'].forEach(m => $('#t-'+m).onclick = () => { hModo = m; selCell = null; $('#hSel').value = ''; delete $('#hSel').dataset.elegido; renderHorario(); });
+$('#hSel').onchange = () => { selCell = null; $('#hSel').dataset.elegido = '1'; renderHorario(); };
+$('#hColor').onchange = renderHorario;
+$('#hAjuste').onchange = () => { selCell = null; renderHorario(); };
+$('#hPrint').onclick = imprimir;
+let _rz; window.addEventListener('resize', () => { clearTimeout(_rz); _rz = setTimeout(ajustarZoom, 150); });
+$('#bAddT').onclick = () => { talleresForm.push({mid:'',tal:''}); renderTalleresForm(); };
+$('#bTalleres').addEventListener('input', e => { const i = e.target.dataset.ti; if (i==null) return; talleresForm[+i][e.target.dataset.f] = e.target.value; });
+$('#bTalleres').addEventListener('change', e => { const i = e.target.dataset.ti; if (i==null) return; talleresForm[+i][e.target.dataset.f] = e.target.value; });
+$('#bTalleres').onclick = e => { const q = e.target.closest('[data-quitar]'); if (!q) return; talleresForm.splice(+q.dataset.quitar,1); renderTalleresForm(); };
+$('#bGrupos').onclick = e => { const b = e.target.closest('[data-grado]'); if (!b) return;
+  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); };
+$('#bSave').onclick = saveB; $('#bCancel').onclick = resetB;
+$('#bList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]');
+  if (a) editarB(a.dataset.edit);
+  if (d && confirm('¿Eliminar este bloque de talleres?')) db.ref(`${ROOT}/bloques/${d.dataset.del}`).remove().then(() => { toast('Bloque eliminado.'); if (editB===d.dataset.del) resetB(); }); };
+function tocarCelda(td){
+  if (hModo !== 'grupo' || !S.generado) return;
+  const pos = {d:+td.dataset.d, n:+td.dataset.n}, gid = $('#hSel').value;
+  if (!selCell){ if (!S.generado.clases?.[gid]?.[`${pos.d}-${pos.n}`]) return; selCell = pos; renderHorario(); return; }
+  const A = selCell; selCell = null;
+  if (A.d===pos.d && A.n===pos.n){ renderHorario(); return; }
+  renderHorario(); mover(gid, A, pos);
+}
+$('#hGrid').addEventListener('click', e => { const td = e.target.closest('td.pick'); if (td) tocarCelda(td); });
+$('#hGrid').addEventListener('keydown', e => { if ((e.key==='Enter'||e.key===' ') && e.target.matches('td.pick')){ e.preventDefault(); tocarCelda(e.target); } });
+window.addEventListener('afterprint', () => $('#printArea').innerHTML = '');
+
+renderBloq();
+</script>
+</body>
+</html>

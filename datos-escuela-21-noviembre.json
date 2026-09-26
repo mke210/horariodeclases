@@ -1,0 +1,2096 @@
+{
+ "config": {
+  "escuela": "Escuela Secundaria General 21 de Noviembre",
+  "ciclo": "2026-2027",
+  "modDur": 50,
+  "recesoIni": "10:20",
+  "recesoFin": "10:50",
+  "turnos": {
+   "matutino": {
+    "nombre": "Matutino",
+    "ini": "07:00",
+    "fin": "13:20"
+   },
+   "mixto": {
+    "nombre": "Mixto",
+    "ini": "08:40",
+    "fin": "15:00"
+   }
+  }
+ },
+ "maestros": {
+  "m0040": {
+   "nombre": "ABRAHAM SOLIS MARTINEZ",
+   "alias": "ABRAHAM",
+   "horasContrato": 40,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0041": {
+   "nombre": "AMANDA GARNICA MARTINEZ",
+   "alias": "AMANDA",
+   "horasContrato": 38,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0042": {
+   "nombre": "ANGEL OMAR GUZMAN LOPEZ",
+   "alias": "OMAR",
+   "horasContrato": 42,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0043": {
+   "nombre": "BLAS CABALLERO CABALLERO",
+   "alias": "BLAS",
+   "horasContrato": 31,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0044": {
+   "nombre": "CARLOS GOMEZ LOPEZ",
+   "alias": "CARLOS",
+   "horasContrato": 18,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0045": {
+   "nombre": "CARMELA ALONSO MARTINEZ",
+   "alias": "CARMELA",
+   "horasContrato": 25,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0046": {
+   "nombre": "DAMIAN RUIZ FLORES",
+   "alias": "DAMIAN",
+   "horasContrato": 21,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0047": {
+   "nombre": "ELIDETH ZAMORA LOPEZ",
+   "alias": "ELIDETH",
+   "horasContrato": 21,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0048": {
+   "nombre": "EMILIO ELISEO CORTES TRUJILLO",
+   "alias": "EMILIO",
+   "horasContrato": 42,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0049": {
+   "nombre": "ENRIQUE MESINAS DE JESUS",
+   "alias": "MESINAS",
+   "horasContrato": 25,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0050": {
+   "nombre": "ERICK PEREZ ROQUE",
+   "alias": "ERICK",
+   "horasContrato": 35,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0051": {
+   "nombre": "GILBERTO SANTIAGO LESCAS",
+   "alias": "GILBERTO",
+   "horasContrato": 42,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0052": {
+   "nombre": "GLORIA MARINA CAMACHO VASQUEZ",
+   "alias": "GLORIA",
+   "horasContrato": 12,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0053": {
+   "nombre": "GUADALUPE EDITH LEGASPI CRUZ",
+   "alias": "LEGASPI",
+   "horasContrato": 20,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0054": {
+   "nombre": "ISHELT GONZALEZ PINEDA",
+   "alias": "ISHELT",
+   "horasContrato": 21,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0055": {
+   "nombre": "JUAN JAVIER MOSQUEDA CORTES",
+   "alias": "JUAN",
+   "horasContrato": 35,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0056": {
+   "nombre": "LUZ GARDENIA SANTIAGO PERALTA",
+   "alias": "GARDENIA",
+   "horasContrato": 25,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0057": {
+   "nombre": "LUZ PERLA REBOLLAR CERVANTES",
+   "alias": "PERLA",
+   "horasContrato": 27,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0058": {
+   "nombre": "MANUELA SANTIAGO MORALES",
+   "alias": "MANUELA",
+   "horasContrato": 42,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0059": {
+   "nombre": "RAMON MARTINEZ VASQUEZ",
+   "alias": "RAMON",
+   "horasContrato": 25,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0060": {
+   "nombre": "RUBEN PARRA URDIANA",
+   "alias": "PARRA",
+   "horasContrato": 37,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0061": {
+   "nombre": "SELA ABIGAIL REYES COLLI",
+   "alias": "SELA",
+   "horasContrato": 41,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0062": {
+   "nombre": "SILVIA MARTINEZ SANCHEZ",
+   "alias": "SILVIA",
+   "horasContrato": 41,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0063": {
+   "nombre": "SOFIA ESTHER CRUZ MARTINEZ",
+   "alias": "SOFIA",
+   "horasContrato": 42,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0064": {
+   "nombre": "TANIA VILLEGAS APARICIO",
+   "alias": "TANIA",
+   "horasContrato": 41,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0065": {
+   "nombre": "TERESA ANTONIO GARCIA",
+   "alias": "TERESA",
+   "horasContrato": 31,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0066": {
+   "nombre": "VACANTE",
+   "alias": "VACANTE",
+   "horasContrato": 18,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0067": {
+   "nombre": "WENDY LILIANA",
+   "alias": "WENDY",
+   "horasContrato": 26,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0068": {
+   "nombre": "ARTURO GARCIA",
+   "alias": "ARTURO",
+   "horasContrato": 18,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0069": {
+   "nombre": "ELIZABETH CUETO",
+   "alias": "ELIZABETH",
+   "horasContrato": 18,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0070": {
+   "nombre": "CARLOS HERNANDEZ",
+   "alias": "CARLOS H.",
+   "horasContrato": 18,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0071": {
+   "nombre": "KATYA KARIME",
+   "alias": "KATYA",
+   "horasContrato": 27,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  },
+  "m0072": {
+   "nombre": "JOSE EMMANUEL",
+   "alias": "EMMANUEL",
+   "horasContrato": 18,
+   "maxDia": 0,
+   "turnos": {
+    "matutino": true,
+    "mixto": true
+   },
+   "libres": false,
+   "numLibres": 3
+  }
+ },
+ "asignaturas": {
+  "s0028": {
+   "nombre": "ARTES",
+   "abrev": "",
+   "horasSemana": 2,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#6BB6F0"
+  },
+  "s0029": {
+   "nombre": "BIOLOGIA",
+   "abrev": "",
+   "horasSemana": 6,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#BDBD6E"
+  },
+  "s0030": {
+   "nombre": "EDUCACION FISICA",
+   "abrev": "",
+   "horasSemana": 2,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#86FFFF"
+  },
+  "s0031": {
+   "nombre": "ESPAÑOL",
+   "abrev": "",
+   "horasSemana": 5,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#FFA366"
+  },
+  "s0032": {
+   "nombre": "FISICA",
+   "abrev": "",
+   "horasSemana": 6,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#E7A3E7"
+  },
+  "s0033": {
+   "nombre": "FORMACION CIVICA Y ETICA",
+   "abrev": "FCYE",
+   "horasSemana": 4,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#CFCFFF"
+  },
+  "s0034": {
+   "nombre": "GEOGRAFIA",
+   "abrev": "",
+   "horasSemana": 4,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#D6D66E"
+  },
+  "s0035": {
+   "nombre": "HISTORIA",
+   "abrev": "",
+   "horasSemana": 4,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#C47C7C"
+  },
+  "s0036": {
+   "nombre": "INGLES",
+   "abrev": "",
+   "horasSemana": 3,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#8C8CD0"
+  },
+  "s0037": {
+   "nombre": "MATEMATICAS",
+   "abrev": "",
+   "horasSemana": 5,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#FFC894"
+  },
+  "s0038": {
+   "nombre": "QUIMICA",
+   "abrev": "",
+   "horasSemana": 6,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#8FD98F"
+  },
+  "s0039": {
+   "nombre": "TUTORIA",
+   "abrev": "",
+   "horasSemana": 1,
+   "maxDia": 1,
+   "doble": false,
+   "color": "#3FD13F"
+  }
+ },
+ "grupos": {
+  "g0001": {
+   "grado": 1,
+   "grupo": "A",
+   "turno": "matutino"
+  },
+  "g0002": {
+   "grado": 1,
+   "grupo": "B",
+   "turno": "matutino"
+  },
+  "g0003": {
+   "grado": 1,
+   "grupo": "C",
+   "turno": "matutino"
+  },
+  "g0004": {
+   "grado": 1,
+   "grupo": "D",
+   "turno": "matutino"
+  },
+  "g0005": {
+   "grado": 1,
+   "grupo": "E",
+   "turno": "matutino"
+  },
+  "g0006": {
+   "grado": 1,
+   "grupo": "F",
+   "turno": "matutino"
+  },
+  "g0007": {
+   "grado": 1,
+   "grupo": "G",
+   "turno": "mixto"
+  },
+  "g0008": {
+   "grado": 1,
+   "grupo": "H",
+   "turno": "mixto"
+  },
+  "g0009": {
+   "grado": 1,
+   "grupo": "I",
+   "turno": "mixto"
+  },
+  "g0010": {
+   "grado": 2,
+   "grupo": "A",
+   "turno": "matutino"
+  },
+  "g0011": {
+   "grado": 2,
+   "grupo": "B",
+   "turno": "matutino"
+  },
+  "g0012": {
+   "grado": 2,
+   "grupo": "C",
+   "turno": "matutino"
+  },
+  "g0013": {
+   "grado": 2,
+   "grupo": "D",
+   "turno": "matutino"
+  },
+  "g0014": {
+   "grado": 2,
+   "grupo": "E",
+   "turno": "matutino"
+  },
+  "g0015": {
+   "grado": 2,
+   "grupo": "F",
+   "turno": "matutino"
+  },
+  "g0016": {
+   "grado": 2,
+   "grupo": "G",
+   "turno": "mixto"
+  },
+  "g0017": {
+   "grado": 2,
+   "grupo": "H",
+   "turno": "mixto"
+  },
+  "g0018": {
+   "grado": 2,
+   "grupo": "I",
+   "turno": "mixto"
+  },
+  "g0019": {
+   "grado": 3,
+   "grupo": "A",
+   "turno": "matutino"
+  },
+  "g0020": {
+   "grado": 3,
+   "grupo": "B",
+   "turno": "matutino"
+  },
+  "g0021": {
+   "grado": 3,
+   "grupo": "C",
+   "turno": "matutino"
+  },
+  "g0022": {
+   "grado": 3,
+   "grupo": "D",
+   "turno": "matutino"
+  },
+  "g0023": {
+   "grado": 3,
+   "grupo": "E",
+   "turno": "matutino"
+  },
+  "g0024": {
+   "grado": 3,
+   "grupo": "F",
+   "turno": "matutino"
+  },
+  "g0025": {
+   "grado": 3,
+   "grupo": "G",
+   "turno": "mixto"
+  },
+  "g0026": {
+   "grado": 3,
+   "grupo": "H",
+   "turno": "mixto"
+  },
+  "g0027": {
+   "grado": 3,
+   "grupo": "I",
+   "turno": "mixto"
+  }
+ },
+ "asignaciones": {
+  "a0073": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0039",
+   "grupoId": "g0001"
+  },
+  "a0074": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0001"
+  },
+  "a0075": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0001"
+  },
+  "a0076": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0001",
+   "horas": 2
+  },
+  "a0077": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0035",
+   "grupoId": "g0001",
+   "horas": 2
+  },
+  "a0078": {
+   "maestroId": "m0057",
+   "asignaturaId": "s0029",
+   "grupoId": "g0001"
+  },
+  "a0079": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0001"
+  },
+  "a0080": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0001"
+  },
+  "a0081": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0001"
+  },
+  "a0082": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0001"
+  },
+  "a0083": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0002"
+  },
+  "a0084": {
+   "maestroId": "m0044",
+   "asignaturaId": "s0035",
+   "grupoId": "g0002",
+   "horas": 2
+  },
+  "a0085": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0002"
+  },
+  "a0086": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0002",
+   "horas": 2
+  },
+  "a0087": {
+   "maestroId": "m0057",
+   "asignaturaId": "s0029",
+   "grupoId": "g0002"
+  },
+  "a0088": {
+   "maestroId": "m0057",
+   "asignaturaId": "s0039",
+   "grupoId": "g0002"
+  },
+  "a0089": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0002"
+  },
+  "a0090": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0002"
+  },
+  "a0091": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0002"
+  },
+  "a0092": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0002"
+  },
+  "a0093": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0003"
+  },
+  "a0094": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0035",
+   "grupoId": "g0003",
+   "horas": 2
+  },
+  "a0095": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0003"
+  },
+  "a0096": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0003",
+   "horas": 2
+  },
+  "a0097": {
+   "maestroId": "m0057",
+   "asignaturaId": "s0029",
+   "grupoId": "g0003"
+  },
+  "a0098": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0003"
+  },
+  "a0099": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0003"
+  },
+  "a0100": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0003"
+  },
+  "a0101": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0039",
+   "grupoId": "g0003"
+  },
+  "a0102": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0003"
+  },
+  "a0103": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0004"
+  },
+  "a0104": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0039",
+   "grupoId": "g0004"
+  },
+  "a0105": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0035",
+   "grupoId": "g0004",
+   "horas": 2
+  },
+  "a0106": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0004"
+  },
+  "a0107": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0004",
+   "horas": 2
+  },
+  "a0108": {
+   "maestroId": "m0057",
+   "asignaturaId": "s0029",
+   "grupoId": "g0004"
+  },
+  "a0109": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0004"
+  },
+  "a0110": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0004"
+  },
+  "a0111": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0004"
+  },
+  "a0112": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0004"
+  },
+  "a0113": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0005"
+  },
+  "a0114": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0005"
+  },
+  "a0115": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0005",
+   "horas": 2
+  },
+  "a0116": {
+   "maestroId": "m0053",
+   "asignaturaId": "s0029",
+   "grupoId": "g0005"
+  },
+  "a0117": {
+   "maestroId": "m0053",
+   "asignaturaId": "s0039",
+   "grupoId": "g0005"
+  },
+  "a0118": {
+   "maestroId": "m0057",
+   "asignaturaId": "s0035",
+   "grupoId": "g0005",
+   "horas": 2
+  },
+  "a0119": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0005"
+  },
+  "a0120": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0005"
+  },
+  "a0121": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0005"
+  },
+  "a0122": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0005"
+  },
+  "a0123": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0006"
+  },
+  "a0124": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0039",
+   "grupoId": "g0006"
+  },
+  "a0125": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0006"
+  },
+  "a0126": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0006",
+   "horas": 2
+  },
+  "a0127": {
+   "maestroId": "m0053",
+   "asignaturaId": "s0029",
+   "grupoId": "g0006"
+  },
+  "a0128": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0006"
+  },
+  "a0129": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0006"
+  },
+  "a0130": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0006"
+  },
+  "a0131": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0035",
+   "grupoId": "g0006",
+   "horas": 2
+  },
+  "a0132": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0028",
+   "grupoId": "g0006"
+  },
+  "a0133": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0007"
+  },
+  "a0134": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0007"
+  },
+  "a0135": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0007"
+  },
+  "a0136": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0007",
+   "horas": 2
+  },
+  "a0137": {
+   "maestroId": "m0053",
+   "asignaturaId": "s0029",
+   "grupoId": "g0007"
+  },
+  "a0138": {
+   "maestroId": "m0053",
+   "asignaturaId": "s0039",
+   "grupoId": "g0007"
+  },
+  "a0139": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0036",
+   "grupoId": "g0007"
+  },
+  "a0140": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0007",
+   "horas": 2
+  },
+  "a0141": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0007"
+  },
+  "a0142": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0007"
+  },
+  "a0143": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0008"
+  },
+  "a0144": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0008"
+  },
+  "a0145": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0008"
+  },
+  "a0146": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0028",
+   "grupoId": "g0008"
+  },
+  "a0147": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0008",
+   "horas": 2
+  },
+  "a0148": {
+   "maestroId": "m0056",
+   "asignaturaId": "s0029",
+   "grupoId": "g0008"
+  },
+  "a0149": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0036",
+   "grupoId": "g0008"
+  },
+  "a0150": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0008",
+   "horas": 2
+  },
+  "a0151": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0031",
+   "grupoId": "g0008"
+  },
+  "a0152": {
+   "maestroId": "m0063",
+   "asignaturaId": "s0039",
+   "grupoId": "g0008"
+  },
+  "a0153": {
+   "maestroId": "m0041",
+   "asignaturaId": "s0034",
+   "grupoId": "g0009"
+  },
+  "a0154": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0009"
+  },
+  "a0155": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0028",
+   "grupoId": "g0009"
+  },
+  "a0156": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0009",
+   "horas": 2
+  },
+  "a0157": {
+   "maestroId": "m0056",
+   "asignaturaId": "s0029",
+   "grupoId": "g0009"
+  },
+  "a0158": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0036",
+   "grupoId": "g0009"
+  },
+  "a0159": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0039",
+   "grupoId": "g0009"
+  },
+  "a0160": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0009"
+  },
+  "a0161": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0035",
+   "grupoId": "g0009",
+   "horas": 2
+  },
+  "a0162": {
+   "maestroId": "m0067",
+   "asignaturaId": "s0031",
+   "grupoId": "g0009"
+  },
+  "a0163": {
+   "maestroId": "m0043",
+   "asignaturaId": "s0032",
+   "grupoId": "g0010"
+  },
+  "a0164": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0031",
+   "grupoId": "g0010"
+  },
+  "a0165": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0039",
+   "grupoId": "g0010"
+  },
+  "a0166": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0010"
+  },
+  "a0167": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0010"
+  },
+  "a0168": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0010"
+  },
+  "a0169": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0010"
+  },
+  "a0170": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0010"
+  },
+  "a0171": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0010"
+  },
+  "a0172": {
+   "maestroId": "m0043",
+   "asignaturaId": "s0032",
+   "grupoId": "g0011"
+  },
+  "a0173": {
+   "maestroId": "m0043",
+   "asignaturaId": "s0039",
+   "grupoId": "g0011"
+  },
+  "a0174": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0031",
+   "grupoId": "g0011"
+  },
+  "a0175": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0011"
+  },
+  "a0176": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0011"
+  },
+  "a0177": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0011"
+  },
+  "a0178": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0011"
+  },
+  "a0179": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0011"
+  },
+  "a0180": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0011"
+  },
+  "a0181": {
+   "maestroId": "m0043",
+   "asignaturaId": "s0032",
+   "grupoId": "g0012"
+  },
+  "a0182": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0031",
+   "grupoId": "g0012"
+  },
+  "a0183": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0012"
+  },
+  "a0184": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0012"
+  },
+  "a0185": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0012"
+  },
+  "a0186": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0012"
+  },
+  "a0187": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0012"
+  },
+  "a0188": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0012"
+  },
+  "a0189": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0039",
+   "grupoId": "g0012"
+  },
+  "a0190": {
+   "maestroId": "m0043",
+   "asignaturaId": "s0032",
+   "grupoId": "g0013"
+  },
+  "a0191": {
+   "maestroId": "m0045",
+   "asignaturaId": "s0031",
+   "grupoId": "g0013"
+  },
+  "a0192": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0013"
+  },
+  "a0193": {
+   "maestroId": "m0050",
+   "asignaturaId": "s0037",
+   "grupoId": "g0013"
+  },
+  "a0194": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0033",
+   "grupoId": "g0013"
+  },
+  "a0195": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0013"
+  },
+  "a0196": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0013"
+  },
+  "a0197": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0039",
+   "grupoId": "g0013"
+  },
+  "a0198": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0013"
+  },
+  "a0199": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0014"
+  },
+  "a0200": {
+   "maestroId": "m0049",
+   "asignaturaId": "s0032",
+   "grupoId": "g0014"
+  },
+  "a0201": {
+   "maestroId": "m0049",
+   "asignaturaId": "s0039",
+   "grupoId": "g0014"
+  },
+  "a0202": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0033",
+   "grupoId": "g0014"
+  },
+  "a0203": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0014"
+  },
+  "a0204": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0014"
+  },
+  "a0205": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0014"
+  },
+  "a0206": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0014"
+  },
+  "a0207": {
+   "maestroId": "m0067",
+   "asignaturaId": "s0031",
+   "grupoId": "g0014"
+  },
+  "a0208": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0015"
+  },
+  "a0209": {
+   "maestroId": "m0043",
+   "asignaturaId": "s0032",
+   "grupoId": "g0015"
+  },
+  "a0210": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0028",
+   "grupoId": "g0015"
+  },
+  "a0211": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0015"
+  },
+  "a0212": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0033",
+   "grupoId": "g0015"
+  },
+  "a0213": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0015"
+  },
+  "a0214": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0015"
+  },
+  "a0215": {
+   "maestroId": "m0067",
+   "asignaturaId": "s0031",
+   "grupoId": "g0015"
+  },
+  "a0216": {
+   "maestroId": "m0067",
+   "asignaturaId": "s0039",
+   "grupoId": "g0015"
+  },
+  "a0217": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0016"
+  },
+  "a0218": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0016"
+  },
+  "a0219": {
+   "maestroId": "m0049",
+   "asignaturaId": "s0032",
+   "grupoId": "g0016"
+  },
+  "a0220": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0028",
+   "grupoId": "g0016"
+  },
+  "a0221": {
+   "maestroId": "m0052",
+   "asignaturaId": "s0035",
+   "grupoId": "g0016"
+  },
+  "a0222": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0033",
+   "grupoId": "g0016"
+  },
+  "a0223": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0031",
+   "grupoId": "g0016"
+  },
+  "a0224": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0037",
+   "grupoId": "g0016"
+  },
+  "a0225": {
+   "maestroId": "m0061",
+   "asignaturaId": "s0039",
+   "grupoId": "g0016"
+  },
+  "a0226": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0017"
+  },
+  "a0227": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0017"
+  },
+  "a0228": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0017"
+  },
+  "a0229": {
+   "maestroId": "m0052",
+   "asignaturaId": "s0035",
+   "grupoId": "g0017"
+  },
+  "a0230": {
+   "maestroId": "m0054",
+   "asignaturaId": "s0037",
+   "grupoId": "g0017"
+  },
+  "a0231": {
+   "maestroId": "m0056",
+   "asignaturaId": "s0032",
+   "grupoId": "g0017"
+  },
+  "a0232": {
+   "maestroId": "m0056",
+   "asignaturaId": "s0039",
+   "grupoId": "g0017"
+  },
+  "a0233": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0031",
+   "grupoId": "g0017"
+  },
+  "a0234": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0028",
+   "grupoId": "g0017"
+  },
+  "a0235": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0018"
+  },
+  "a0236": {
+   "maestroId": "m0048",
+   "asignaturaId": "s0036",
+   "grupoId": "g0018"
+  },
+  "a0237": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0018"
+  },
+  "a0238": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0039",
+   "grupoId": "g0018"
+  },
+  "a0239": {
+   "maestroId": "m0052",
+   "asignaturaId": "s0035",
+   "grupoId": "g0018"
+  },
+  "a0240": {
+   "maestroId": "m0054",
+   "asignaturaId": "s0037",
+   "grupoId": "g0018"
+  },
+  "a0241": {
+   "maestroId": "m0056",
+   "asignaturaId": "s0032",
+   "grupoId": "g0018"
+  },
+  "a0242": {
+   "maestroId": "m0059",
+   "asignaturaId": "s0031",
+   "grupoId": "g0018"
+  },
+  "a0243": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0028",
+   "grupoId": "g0018"
+  },
+  "a0244": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0019"
+  },
+  "a0245": {
+   "maestroId": "m0044",
+   "asignaturaId": "s0031",
+   "grupoId": "g0019"
+  },
+  "a0246": {
+   "maestroId": "m0049",
+   "asignaturaId": "s0038",
+   "grupoId": "g0019"
+  },
+  "a0247": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0019"
+  },
+  "a0248": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0019"
+  },
+  "a0249": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0019"
+  },
+  "a0250": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0019"
+  },
+  "a0251": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0039",
+   "grupoId": "g0019"
+  },
+  "a0252": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0019"
+  },
+  "a0253": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0020"
+  },
+  "a0254": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0020"
+  },
+  "a0255": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0035",
+   "grupoId": "g0020"
+  },
+  "a0256": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0020"
+  },
+  "a0257": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0020"
+  },
+  "a0258": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0039",
+   "grupoId": "g0020"
+  },
+  "a0259": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0020"
+  },
+  "a0260": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0020"
+  },
+  "a0261": {
+   "maestroId": "m0067",
+   "asignaturaId": "s0031",
+   "grupoId": "g0020"
+  },
+  "a0262": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0021"
+  },
+  "a0263": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0021"
+  },
+  "a0264": {
+   "maestroId": "m0044",
+   "asignaturaId": "s0031",
+   "grupoId": "g0021"
+  },
+  "a0265": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0021"
+  },
+  "a0266": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0039",
+   "grupoId": "g0021"
+  },
+  "a0267": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0021"
+  },
+  "a0268": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0021"
+  },
+  "a0269": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0021"
+  },
+  "a0270": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0021"
+  },
+  "a0271": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0022"
+  },
+  "a0272": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0022"
+  },
+  "a0273": {
+   "maestroId": "m0044",
+   "asignaturaId": "s0031",
+   "grupoId": "g0022"
+  },
+  "a0274": {
+   "maestroId": "m0044",
+   "asignaturaId": "s0039",
+   "grupoId": "g0022"
+  },
+  "a0275": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0035",
+   "grupoId": "g0022"
+  },
+  "a0276": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0022"
+  },
+  "a0277": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0022"
+  },
+  "a0278": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0022"
+  },
+  "a0279": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0022"
+  },
+  "a0280": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0023"
+  },
+  "a0281": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0023"
+  },
+  "a0282": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0035",
+   "grupoId": "g0023"
+  },
+  "a0283": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0039",
+   "grupoId": "g0023"
+  },
+  "a0284": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0023"
+  },
+  "a0285": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0023"
+  },
+  "a0286": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0023"
+  },
+  "a0287": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0023"
+  },
+  "a0288": {
+   "maestroId": "m0067",
+   "asignaturaId": "s0031",
+   "grupoId": "g0023"
+  },
+  "a0289": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0024"
+  },
+  "a0290": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0024"
+  },
+  "a0291": {
+   "maestroId": "m0047",
+   "asignaturaId": "s0031",
+   "grupoId": "g0024"
+  },
+  "a0292": {
+   "maestroId": "m0047",
+   "asignaturaId": "s0039",
+   "grupoId": "g0024"
+  },
+  "a0293": {
+   "maestroId": "m0055",
+   "asignaturaId": "s0035",
+   "grupoId": "g0024"
+  },
+  "a0294": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0024"
+  },
+  "a0295": {
+   "maestroId": "m0060",
+   "asignaturaId": "s0030",
+   "grupoId": "g0024"
+  },
+  "a0296": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0024"
+  },
+  "a0297": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0024"
+  },
+  "a0298": {
+   "maestroId": "m0040",
+   "asignaturaId": "s0037",
+   "grupoId": "g0025"
+  },
+  "a0299": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0025"
+  },
+  "a0300": {
+   "maestroId": "m0047",
+   "asignaturaId": "s0031",
+   "grupoId": "g0025"
+  },
+  "a0301": {
+   "maestroId": "m0049",
+   "asignaturaId": "s0038",
+   "grupoId": "g0025"
+  },
+  "a0302": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0039",
+   "grupoId": "g0025"
+  },
+  "a0303": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0025"
+  },
+  "a0304": {
+   "maestroId": "m0062",
+   "asignaturaId": "s0035",
+   "grupoId": "g0025"
+  },
+  "a0305": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0025"
+  },
+  "a0306": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0025"
+  },
+  "a0307": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0026"
+  },
+  "a0308": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0026"
+  },
+  "a0309": {
+   "maestroId": "m0047",
+   "asignaturaId": "s0031",
+   "grupoId": "g0026"
+  },
+  "a0310": {
+   "maestroId": "m0054",
+   "asignaturaId": "s0037",
+   "grupoId": "g0026"
+  },
+  "a0311": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0033",
+   "grupoId": "g0026"
+  },
+  "a0312": {
+   "maestroId": "m0058",
+   "asignaturaId": "s0039",
+   "grupoId": "g0026"
+  },
+  "a0313": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0026"
+  },
+  "a0314": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0026"
+  },
+  "a0315": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0035",
+   "grupoId": "g0026"
+  },
+  "a0316": {
+   "maestroId": "m0042",
+   "asignaturaId": "s0038",
+   "grupoId": "g0027"
+  },
+  "a0317": {
+   "maestroId": "m0046",
+   "asignaturaId": "s0030",
+   "grupoId": "g0027"
+  },
+  "a0318": {
+   "maestroId": "m0047",
+   "asignaturaId": "s0031",
+   "grupoId": "g0027"
+  },
+  "a0319": {
+   "maestroId": "m0051",
+   "asignaturaId": "s0033",
+   "grupoId": "g0027"
+  },
+  "a0320": {
+   "maestroId": "m0054",
+   "asignaturaId": "s0037",
+   "grupoId": "g0027"
+  },
+  "a0321": {
+   "maestroId": "m0054",
+   "asignaturaId": "s0039",
+   "grupoId": "g0027"
+  },
+  "a0322": {
+   "maestroId": "m0064",
+   "asignaturaId": "s0028",
+   "grupoId": "g0027"
+  },
+  "a0323": {
+   "maestroId": "m0065",
+   "asignaturaId": "s0036",
+   "grupoId": "g0027"
+  },
+  "a0324": {
+   "maestroId": "m0066",
+   "asignaturaId": "s0035",
+   "grupoId": "g0027"
+  }
+ },
+ "reglas": {},
+ "bloques": {
+  "b0325": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#A9C5E8",
+   "grupos": {
+    "g0001": true,
+    "g0002": true,
+    "g0003": true
+   },
+   "talleres": {
+    "m0068": "CIRCUITOS ELECTRICOS",
+    "m0069": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0072": "INFORMATICA"
+   }
+  },
+  "b0326": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#9E9E9E",
+   "grupos": {
+    "g0004": true,
+    "g0005": true,
+    "g0006": true
+   },
+   "talleres": {
+    "m0068": "CIRCUITOS ELECTRICOS",
+    "m0069": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0070": "INFORMATICA"
+   }
+  },
+  "b0327": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#F2C9EC",
+   "grupos": {
+    "g0007": true,
+    "g0008": true,
+    "g0009": true
+   },
+   "talleres": {
+    "m0070": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0072": "INFORMATICA"
+   }
+  },
+  "b0328": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#DCE9F7",
+   "grupos": {
+    "g0010": true,
+    "g0011": true,
+    "g0012": true
+   },
+   "talleres": {
+    "m0068": "CIRCUITOS ELECTRICOS",
+    "m0069": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0072": "INFORMATICA"
+   }
+  },
+  "b0329": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#8ED8F0",
+   "grupos": {
+    "g0013": true,
+    "g0014": true,
+    "g0015": true
+   },
+   "talleres": {
+    "m0068": "CIRCUITOS ELECTRICOS",
+    "m0069": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0070": "INFORMATICA"
+   }
+  },
+  "b0330": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#FFE0D0",
+   "grupos": {
+    "g0016": true,
+    "g0017": true,
+    "g0018": true
+   },
+   "talleres": {
+    "m0070": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0072": "INFORMATICA"
+   }
+  },
+  "b0331": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#FFFF33",
+   "grupos": {
+    "g0019": true,
+    "g0020": true,
+    "g0021": true
+   },
+   "talleres": {
+    "m0068": "CIRCUITOS ELECTRICOS",
+    "m0069": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0070": "INFORMATICA"
+   }
+  },
+  "b0332": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#FFC000",
+   "grupos": {
+    "g0022": true,
+    "g0023": true,
+    "g0024": true
+   },
+   "talleres": {
+    "m0068": "CIRCUITOS ELECTRICOS",
+    "m0069": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0072": "INFORMATICA"
+   }
+  },
+  "b0333": {
+   "nombre": "TECNOLOGÍA",
+   "horas": 3,
+   "maxDia": 2,
+   "doble": true,
+   "color": "#F0A080",
+   "grupos": {
+    "g0025": true,
+    "g0026": true,
+    "g0027": true
+   },
+   "talleres": {
+    "m0070": "OFIMATICA",
+    "m0071": "TURISMO",
+    "m0072": "INFORMATICA"
+   }
+  }
+ }
+}
