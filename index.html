@@ -131,6 +131,12 @@ table.tt{width:100%;border-collapse:separate;border-spacing:4px;min-width:660px;
 .tt.mini td{height:38px}
 .tt.mini .bq{width:100%;height:100%;border:0;background:none;font:inherit;font-size:.75rem;color:var(--suave);cursor:pointer}
 .tt.mini td.bloq .bq{color:var(--tinta);font-weight:700}
+.tt.mini td.si{background:#DDF0E6;border:1px solid var(--ok)}
+.tt.mini td.si .bq{color:var(--ok);font-weight:700}
+.rg .rdia,.rg .rhora{font:inherit;font-weight:700;background:none;border:0;color:inherit;cursor:pointer;padding:2px 4px;white-space:nowrap}
+.rg thead .rdia{color:#fff}
+.rg .rhora{font-size:.8rem}
+.rg th.hcol{width:120px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--tinta);color:#fff;padding:12px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:99;max-width:min(560px,92vw);font-size:.95rem}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.err{background:var(--mal)}
@@ -177,6 +183,18 @@ table.hr{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5pt;
 .hr tr.hh td{color:#1a8a8f;font-size:9.5pt}
 .hr tr.hh td.pt{font-size:5.5pt;color:#555}
 .hr td.cc{background:color-mix(in srgb,var(--c) 82%,#fff)}
+table.sabana{border-collapse:collapse;font-size:.7rem;background:#fff}
+.sabana th,.sabana td{border:1px solid var(--linea);padding:2px 3px;text-align:center;min-width:46px}
+.sabana thead th{background:var(--tinta);color:#fff;font-weight:700}
+.sabana .sh{font-weight:400;font-size:.65rem}
+.sabana th.sg{position:sticky;left:0;background:var(--tinta);color:#fff;z-index:1;min-width:44px}
+.sabana tbody th.sg{background:#fff;color:var(--tinta)}
+.sabana td.cs{background:color-mix(in srgb,var(--c) 70%,#fff)}
+.sabana td b{display:block;font-size:.68rem}
+.sabana td span{display:block;font-size:.6rem;color:#333}
+.sabana td.fuera{background:#f2f3f6}
+.sabana td.blk{background:#fff;color:var(--tinta2)}
+.sabana .sdia,.sabana .sd{border-left:3px solid var(--tinta)}
 table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-family:Arial,sans-serif}
 .htal td{border:1px solid #444;padding:1px 8px;min-width:.9in}
 .bn .ht td.cs,.bn .hr td.cc{background:#fff}
@@ -325,6 +343,12 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     <div class="acts"><button class="btn pri" id="gAdd">Agregar grupos</button></div>
   </div>
   <div class="panel"><h3>Grupos registrados</h3><div id="gList"></div></div>
+  <div class="panel">
+    <h3>Horario por grupo</h3>
+    <p class="hint" style="margin:-6px 0 10px">Materias y profesores de cada módulo y día, según el horario en uso.</p>
+    <div class="hbar"><label>Grupo<select id="gvSel" style="min-width:260px"></select></label></div>
+    <div id="gvTabla"></div>
+  </div>
 </section>
 
 <!-- 5 CARGA -->
@@ -381,16 +405,16 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     <div class="fgrid">
       <label>Aplica a<select id="rTipo"><option value="asignatura">Una asignatura</option><option value="maestro">Un maestro</option><option value="grupo">Un grupo</option></select></label>
       <label>¿Cuál?<select id="rObj"></select></label>
-      <label>Condición<select id="rCond">
-        <option value="noDias">No puede tener clase estos días</option>
-        <option value="soloDias">Solo puede tener clase estos días</option>
-        <option value="noMods">No puede ir en estos módulos</option>
-        <option value="soloMods">Solo puede ir en estos módulos</option>
-        <option value="noUltimo">No puede ir en el último módulo</option>
+      <label style="grid-column:span 2">Condición<select id="rCond">
+        <option value="noCeldas">No puede tener clase en los horarios marcados</option>
+        <option value="soloCeldas">Solo puede tener clase en los horarios marcados</option>
+        <option value="noUltimo">No puede ir en el último módulo del día</option>
       </select></label>
     </div>
-    <div id="rDiasW" style="margin-top:14px"><h3>Días</h3><div class="dchk" id="rDias"></div></div>
-    <div id="rModsW" style="margin-top:14px" hidden><h3>Módulos</h3><div class="dchk" id="rMods"></div></div>
+    <div id="rGridW" style="margin-top:14px"><h3>Horarios</h3>
+      <p class="hint" style="margin:-6px 0 10px">Toca cada módulo del día que quieras marcar. Tocar el nombre del día marca todo ese día; tocar la hora la marca de lunes a viernes.</p>
+      <div class="wrap" id="rGrid"></div>
+      <div class="acts" style="margin-top:8px"><button type="button" class="btn sm" id="rLimpiar">Limpiar selección</button><span id="rCuenta" class="hint"></span></div></div>
     <div class="acts"><button class="btn pri" id="rAdd">Agregar condicionante</button></div>
   </div>
   <div class="panel"><h3>Condicionantes activas</h3><div id="rList"></div></div>
@@ -1047,24 +1071,41 @@ function renderBloques(){
 }
 
 /* ===================== CONDICIONANTES ===================== */
+let reglaCeldas = {};
 function renderReglaForm(){
   const t = $('#rTipo').value;
   const items = t==='asignatura' ? asigOrden().map(([id,a]) => [id,a.nombre])
     : t==='maestro' ? maestrosOrden().map(([id,m]) => [id,m.nombre])
     : gruposOrden().map(([id,g]) => [id,gName(g)]);
   fillSelect($('#rObj'), items, 'Elige');
-  const c = $('#rCond').value;
-  $('#rDiasW').hidden = !(c==='noDias' || c==='soloDias');
-  $('#rModsW').hidden = !(c==='noMods' || c==='soloMods');
-  if (!$('#rDias').children.length) $('#rDias').innerHTML = DIAS.map((d,i) => `<label class="pill"><input type="checkbox" value="${i}" hidden>${d}</label>`).join('');
-  const max = Math.max(...TURNOS.map(t => slotsTurno(t).length), 1);
-  if ($('#rMods').children.length !== max) $('#rMods').innerHTML = Array.from({length:max},(_,i) => `<label class="pill"><input type="checkbox" value="${i+1}" hidden>Módulo ${i+1}</label>`).join('');
+  $('#rGridW').hidden = $('#rCond').value==='noUltimo';
+  renderReglaGrid();
+}
+function renderReglaGrid(){
+  const rows = conReceso(filas(TURNOS)), on = $('#rCond').value==='soloCeldas' ? 'si' : 'bloq';
+  let h = '<table class="tt mini rg"><thead><tr><th class="hcol">Hora</th>' + DIAS.map((d,i) => `<th><button type="button" class="rdia" data-dia="${i}">${d}</button></th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(r => {
+    if (r.receso){ h += recesoRow(); return; }
+    h += `<tr><th class="hcol"><button type="button" class="rhora" data-hora="${r.ini}">${fmt(r.ini)} a ${fmt(r.fin)}</button></th>`;
+    for (let d=0; d<5; d++){ const k = `${d}-${r.ini}`; h += `<td class="${reglaCeldas[k]?on:''}"><button type="button" class="bq" data-k="${k}" aria-pressed="${!!reglaCeldas[k]}" aria-label="${DIAS[d]} ${fmt(r.ini)}">${reglaCeldas[k]?(on==='si'?'Sí':'No'):''}</button></td>`; }
+    h += '</tr>';
+  });
+  $('#rGrid').innerHTML = h + '</tbody></table>';
+  const n = Object.keys(reglaCeldas).length;
+  $('#rCuenta').textContent = n ? `${n} módulo${n>1?'s':''} marcado${n>1?'s':''}` : '';
+}
+function textoCeldas(celdas){
+  const por = DIAS.map(() => []);
+  Object.keys(celdas||{}).forEach(k => { const [d,ini] = k.split('-').map(Number); if (por[d]) por[d].push(ini); });
+  const dur = +S.config.modDur;
+  return por.map((l,d) => l.length ? `${DIAS[d]} ${l.sort((a,b)=>a-b).map(i => `${fmt(i)} a ${fmt(i+dur)}`).join(', ')}` : '').filter(Boolean).join('; ');
 }
 function reglaTxt(r){
   const obj = r.tipo==='asignatura' ? S.asignaturas[r.obj]?.nombre : r.tipo==='maestro' ? S.maestros[r.obj]?.nombre : (S.grupos[r.obj] ? gName(S.grupos[r.obj]) : null);
   const dias = arr(r.dias).map(d => DIAS[d]).join(', '), mods = arr(r.mods).join(', ');
   const c = {noDias:`no tiene clase: ${dias}`, soloDias:`solo tiene clase: ${dias}`, noMods:`no va en los módulos ${mods}`,
-    soloMods:`solo va en los módulos ${mods}`, noUltimo:'no va en el último módulo del día'}[r.cond];
+    soloMods:`solo va en los módulos ${mods}`, noUltimo:'no va en el último módulo del día',
+    noCeldas:`no tiene clase: ${textoCeldas(r.celdas)}`, soloCeldas:`solo tiene clase: ${textoCeldas(r.celdas)}`}[r.cond];
   const pre = {asignatura:'Asignatura', maestro:'Maestro', grupo:'Grupo'}[r.tipo];
   return `${pre} <b>${esc(obj||'(eliminado)')}</b> ${esc(c)}`;
 }
@@ -1072,15 +1113,11 @@ function addRegla(){
   const tipo=$('#rTipo').value, obj=$('#rObj').value, cond=$('#rCond').value;
   if (!obj) return toast('Elige a qué se aplica la condicionante.','err');
   const r = {tipo, obj, cond};
-  if (cond==='noDias' || cond==='soloDias'){
-    r.dias = $$('#rDias input:checked').map(i => +i.value);
-    if (!r.dias.length) return toast('Marca al menos un día.','err');
+  if (cond==='noCeldas' || cond==='soloCeldas'){
+    if (!Object.keys(reglaCeldas).length) return toast('Marca al menos un módulo en la cuadrícula.','err');
+    r.celdas = {...reglaCeldas};
   }
-  if (cond==='noMods' || cond==='soloMods'){
-    r.mods = $$('#rMods input:checked').map(i => +i.value);
-    if (!r.mods.length) return toast('Marca al menos un módulo.','err');
-  }
-  db.ref(`${ROOT}/reglas/${newId()}`).set(r).then(() => { toast('Condicionante agregada.'); $$('#rDias input,#rMods input').forEach(i => i.checked=false); });
+  db.ref(`${ROOT}/reglas/${newId()}`).set(r).then(() => { toast('Condicionante agregada.'); reglaCeldas = {}; renderReglaGrid(); });
 }
 function renderReglas(){
   renderReglaForm();
@@ -1145,6 +1182,8 @@ function makeEngine(){
       if (r.cond==='noMods' && mods.includes(s.n)) return 'regla';
       if (r.cond==='soloMods' && !mods.includes(s.n)) return 'regla';
       if (r.cond==='noUltimo' && s.n===g0.slots.length) return 'regla';
+      if (r.cond==='noCeldas' && r.celdas?.[`${d}-${s.ini}`]) return 'regla';
+      if (r.cond==='soloCeldas' && !r.celdas?.[`${d}-${s.ini}`]) return 'regla';
     }
     return null;
   }
@@ -1543,11 +1582,11 @@ function resumenHoja(lect, enc, filasR){
     <tr class="hh"><td class="pt">Periodos totales ${lect}</td><td>${enc[0]}</td><td>${enc[1]}</td></tr>
     ${filasR.map(f => `<tr><td>${f[0]}</td><td>${esc(f[1])}</td><td${f[3]?` class="cc" style="--c:${f[3]}"`:''}>${esc(f[2])}</td></tr>`).join('')}</tbody></table>`;
 }
-function hojaGrupo(gid, ajuste=false){
+function tablaDeGrupo(gid, ajuste=false){
   const g = S.grupos[gid]; if (!g) return '';
   const cl = S.generado?.clases?.[gid] || {};
   const porIni = new Map(slotsTurno(g.turno).map(s => [s.ini, s]));
-  const tabla = tablaHoja(gName(g), (d,r) => {
+  return tablaHoja(gName(g), (d,r) => {
     const s = porIni.get(r.ini); if (!s) return {};
     const aid = cl[`${d}-${s.n}`];
     const attrs = ajuste ? ` data-d="${d}" data-n="${s.n}" tabindex="0"` : '';
@@ -1558,13 +1597,53 @@ function hojaGrupo(gid, ajuste=false){
     const su = S.asignaturas[a.asignaturaId], m = S.maestros[a.maestroId];
     return {key:aid, cls:'cs'+extra, attrs, color:su?.color, html:`<b>${esc(subCorto(su))}</b><span>${esc(aliasDe(m))}</span>`};
   }, {sinUnir:ajuste});
-  const cnt = {};
-  Object.values(cl).forEach(aid => { if (S.asignaciones[aid]) cnt[aid] = (cnt[aid]||0)+1; });
+}
+function resumenDeGrupo(gid, desdeCarga=false){
+  const cl = S.generado?.clases?.[gid] || {}, cnt = {};
+  if (desdeCarga) asigValidas().forEach(([aid,a]) => { if (a.grupoId===gid) cnt[aid] = horasDe(a); });
+  else Object.values(cl).forEach(aid => { if (S.asignaciones[aid]) cnt[aid] = (cnt[aid]||0)+1; });
   const items = Object.entries(cnt).map(([aid,n]) => { const a = S.asignaciones[aid]; return {n, m:S.maestros[a.maestroId], s:S.asignaturas[a.asignaturaId]}; })
     .sort((x,y) => cmp(x.m?.nombre||'', y.m?.nombre||'') || cmp(x.s?.nombre||'', y.s?.nombre||''));
   let prev = null;
   const filasR = items.map(it => { const t = `${(it.m?.nombre||'').toUpperCase()} (${aliasDe(it.m)})`; const r = [it.n, t===prev ? "''" : t, subLargo(it.s), it.s?.color]; prev = t; return r; });
-  return `<section class="hoja"><p class="h-cap">Horario semanal: Grupos de alumnos</p>${tabla}${resumenHoja(items.reduce((s,x)=>s+x.n,0), ['Profesores','Materias'], filasR)}</section>`;
+  return resumenHoja(items.reduce((s,x)=>s+x.n,0), ['Profesores','Materias'], filasR);
+}
+function hojaGrupo(gid, ajuste=false){
+  if (!S.grupos[gid]) return '';
+  return `<section class="hoja"><p class="h-cap">Horario semanal: Grupos de alumnos</p>${tablaDeGrupo(gid, ajuste)}${resumenDeGrupo(gid)}</section>`;
+}
+// Vista general: todos los grupos en una sola tabla (renglones = grupos, columnas = día y hora)
+function tablaGeneral(){
+  const rows = filas(TURNOS), cl = S.generado?.clases || {};
+  let h = `<table class="sabana"><thead><tr><th rowspan="2" class="sg">Grupo</th>${DIAS.map(d => `<th colspan="${rows.length}" class="sd">${d}</th>`).join('')}</tr><tr>${DIAS.map(() => rows.map(r => `<th class="sh">${fmt(r.ini)}</th>`).join('')).join('')}</tr></thead><tbody>`;
+  gruposOrden().forEach(([gid,g]) => {
+    const porIni = new Map(slotsTurno(g.turno).map(s => [s.ini, s]));
+    h += `<tr><th class="sg">${gName(g)}</th>`;
+    for (let d=0; d<5; d++) rows.forEach((r,i) => {
+      const s = porIni.get(r.ini), sep = i===0 ? ' sdia' : '';
+      if (!s){ h += `<td class="fuera${sep}"></td>`; return; }
+      const aid = cl[gid]?.[`${d}-${s.n}`];
+      if (!aid){ h += `<td class="${sep.trim()}"></td>`; return; }
+      if (String(aid).startsWith('B:')){ const b = S.bloques[aid.slice(2)]; h += `<td class="blk${sep}" title="${esc(b?.nombre||'')}"><b>${esc((b?.nombre||'BLQ').slice(0,4).toUpperCase())}</b></td>`; return; }
+      const a = S.asignaciones[aid], su = S.asignaturas[a?.asignaturaId], m = S.maestros[a?.maestroId];
+      h += `<td class="cs${sep}" style="--c:${esc(su?.color||'#ccc')}" title="${esc(su?.nombre||'')} con ${esc(m?.nombre||'')}"><b>${esc(subCorto(su).slice(0,6))}</b><span>${esc(aliasDe(m))}</span></td>`;
+    });
+    h += '</tr>';
+  });
+  return h + '</tbody></table>';
+}
+function renderGrupoHorario(){
+  const items = [['*','Todos los grupos en una tabla'], ...gruposOrden().map(([id,g]) => [id, `${gName(g)} (${nomTurno(g.turno)})`])];
+  fillSelect($('#gvSel'), items);
+  if (!$('#gvSel').dataset.elegido && items[1] && $('#gvSel').value==='*') $('#gvSel').value = items[1][0];
+  const v = $('#gvSel').value, gen = S.generado;
+  if (!gruposOrden().length){ $('#gvTabla').innerHTML = '<p class="empty">Aún no hay grupos.</p>'; return; }
+  if (v==='*'){
+    $('#gvTabla').innerHTML = gen ? `<div class="wrap">${tablaGeneral()}</div>` : '<p class="empty">Genera el horario (paso 7) para ver todos los grupos en una tabla.</p>';
+    return;
+  }
+  const aviso = gen ? '' : '<div class="note warn">Todavía no hay horario generado: abajo ves las materias y profesores asignados. Genera el horario en el paso 7 para verlos por día y hora.</div>';
+  $('#gvTabla').innerHTML = aviso + `<div class="wrap"><div style="min-width:640px">${gen ? tablaDeGrupo(v) : ''}${resumenDeGrupo(v, !gen)}</div></div>`;
 }
 function indiceMaestro(mid){
   const idx = {}, cl = S.generado?.clases || {};
@@ -1716,7 +1795,7 @@ function renderNav(){
   $('#hdrEscuela').textContent = S.config.escuela ? `${S.config.escuela}, ciclo ${S.config.ciclo}` : `Ciclo ${S.config.ciclo}`;
 }
 function refrescar(){
-  renderNav(); renderMaestros(); renderAsignaturas(); renderGrupos(); renderCarga(); renderBloques(); renderReglas();
+  renderNav(); renderMaestros(); renderAsignaturas(); renderGrupos(); renderGrupoHorario(); renderCarga(); renderBloques(); renderReglas();
   renderDiag(); renderResultado(); renderHorario();
   if (!editM) renderBloq();
 }
@@ -1787,6 +1866,7 @@ $('#aSave').onclick = saveA; $('#aCancel').onclick = resetA; $('#aSeed').onclick
 $('#aList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a) editarA(a.dataset.edit); if (d) borrarA(d.dataset.del); };
 
 $('#gAdd').onclick = addGrupos;
+$('#gvSel').onchange = () => { $('#gvSel').dataset.elegido = '1'; renderGrupoHorario(); };
 $('#gLetras').addEventListener('keydown', e => { if (e.key==='Enter') addGrupos(); });
 $('#gList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) borrarG(d.dataset.del); };
 $('#gList').onchange = e => { const s = e.target.closest('[data-turno]'); if (!s) return;
@@ -1807,6 +1887,19 @@ $('#kList').onchange = e => { const i = e.target.closest('[data-hor]'); if (!i) 
   db.ref(`${ROOT}/asignaciones/${i.dataset.hor}/horas`).set(v>0 ? v : null).then(() => toast('Horas actualizadas.')); };
 
 $('#rTipo').onchange = renderReglaForm; $('#rCond').onchange = renderReglaForm; $('#rAdd').onclick = addRegla;
+$('#rLimpiar').onclick = () => { reglaCeldas = {}; renderReglaGrid(); };
+$('#rGrid').onclick = e => {
+  const c = e.target.closest('.bq'), dia = e.target.closest('[data-dia]'), hora = e.target.closest('[data-hora]');
+  const keys = [];
+  if (c) keys.push(c.dataset.k);
+  if (dia) filas(TURNOS).forEach(r => keys.push(`${dia.dataset.dia}-${r.ini}`));
+  if (hora) for (let d=0; d<5; d++) keys.push(`${d}-${hora.dataset.hora}`);
+  if (!keys.length) return;
+  const todos = keys.every(k => reglaCeldas[k]);
+  keys.forEach(k => { if (todos) delete reglaCeldas[k]; else reglaCeldas[k] = true; });
+  renderReglaGrid();
+  if (c) $(`#rGrid [data-k="${c.dataset.k}"]`)?.focus();
+};
 $('#rList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/reglas/${d.dataset.del}`).remove().then(() => toast('Condicionante quitada.')); };
 
 $('#gRun').onclick = generar;
