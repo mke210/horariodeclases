@@ -183,6 +183,28 @@ table.hr{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5pt;
 .hr tr.hh td{color:#1a8a8f;font-size:9.5pt}
 .hr tr.hh td.pt{font-size:5.5pt;color:#555}
 .hr td.cc{background:color-mix(in srgb,var(--c) 82%,#fff)}
+/* Horas prohibidas */
+.phwrap{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.phside{flex:1;min-width:260px}
+.mpcopia{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow:auto}
+table.phg{border-collapse:separate;border-spacing:4px}
+.phg th{font-size:.8rem;color:var(--suave);font-weight:700;padding:0 4px}
+.phg thead button,.phg .pht button{font:inherit;font-weight:700;border:1px solid var(--linea);background:#fff;border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--tinta);width:100%}
+.phg thead button{min-width:44px}
+.phg .pht{font-size:.78rem;white-space:nowrap}
+.phg .pht button{font-weight:400;font-size:.78rem}
+.phg .pht button:disabled{color:#aab;cursor:default;border-style:dashed}
+.phc{display:grid;place-items:center;width:44px;height:36px;border-radius:9px;border:0;font-size:1.05rem;font-weight:700;cursor:pointer}
+.phc.ok{background:#DDF0E6;color:var(--ok);box-shadow:inset 0 0 0 1px #9fd1b7}
+.phc.no{background:#F8E1DE;color:var(--mal);box-shadow:inset 0 0 0 1px #e6a79f;background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(179,54,43,.08) 5px 8px)}
+.phc.fu{background:#eef0f4;cursor:default;display:block}
+.phc:hover:not(.fu){filter:brightness(.95)}
+.phrec td{text-align:center;font-size:.78rem;font-weight:700;color:#6b5410;background:var(--oro2);border-radius:6px;padding:3px}
+.phley{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--suave);flex-wrap:wrap}
+.phk{display:inline-grid;place-items:center;width:22px;height:18px;border-radius:5px;font-size:.75rem;font-weight:700;margin-left:8px}
+.phk.ok{background:#DDF0E6;color:var(--ok)}.phk.no{background:#F8E1DE;color:var(--mal)}.phk.fu{background:#eef0f4}
+.ht td.prohib{background:repeating-linear-gradient(135deg,#FFFDF0 0 6px,#f1e3e1 6px 9px)}
+.sabana td.prohib{background:repeating-linear-gradient(135deg,#fff 0 5px,#f4d9d6 5px 8px)}
 table.sabana{border-collapse:collapse;font-size:.7rem;background:#fff}
 .sabana th,.sabana td{border:1px solid var(--linea);padding:2px 3px;text-align:center;min-width:46px}
 .sabana thead th{background:var(--tinta);color:#fff;font-weight:700}
@@ -207,6 +229,7 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
   @page horizontal{size:letter landscape;margin:8mm}
   .hoja{width:auto;min-height:0;margin:0;padding:0;box-shadow:none;zoom:1!important;break-after:page;page-break-after:always}
   .hoja:last-child{break-after:auto;page-break-after:auto}
+  .ht td.prohib{background:#FFFDF0}
   .hoja.land{page:horizontal;width:10.3in;min-height:0}
   .hoja:not(.land){width:7.8in}
   .hoja .h-cap{margin-top:.15in}
@@ -285,13 +308,26 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
       <label class="chk"><input type="checkbox" id="mLibres" checked>Asignar horas libres a la semana:</label>
       <input id="mNumLibres" type="number" min="1" max="10" value="3" style="width:70px" aria-label="Número de horas libres">
     </div>
-    <h3 style="margin-top:18px">Disponibilidad</h3>
-    <p class="hint" style="margin:-6px 0 10px">Toca un módulo para marcarlo como no disponible; tócalo otra vez para liberarlo.</p>
-    <div class="wrap" id="mBloq"></div>
+    <p class="hint" style="margin:12px 0 0">Las horas en que no puede dar clase se marcan abajo, en <b>Horas prohibidas del maestro</b>.</p>
     <div class="acts">
       <button class="btn pri" id="mSave">Agregar maestro</button>
-      <button class="btn" id="mBloqClear">Limpiar disponibilidad</button>
       <button class="btn" id="mCancel" hidden>Cancelar edición</button>
+    </div>
+  </div>
+  <div class="panel" id="mpPanel">
+    <h3>Horas prohibidas del maestro</h3>
+    <p class="hint" style="margin:-6px 0 10px">Módulos en los que el maestro no puede dar clase (por ejemplo, porque trabaja en otra escuela). Toca un módulo para prohibirlo o permitirlo; se guarda al instante.</p>
+    <div class="hbar"><label>Maestro<select id="mpSel" style="min-width:300px"></select></label>
+      <div class="phley"><span class="phk ok">✓</span> Disponible <span class="phk no">✕</span> Prohibida <span class="phk fu"></span> Fuera de sus turnos</div></div>
+    <div class="phwrap"><div class="wrap" id="mpGrid"></div>
+      <div class="phside">
+        <div id="mpCuenta" class="note ok"></div>
+        <div class="acts" style="margin-top:0"><button type="button" class="btn sm" id="mpTodo">Permitir todo</button></div>
+        <h3 style="margin-top:16px">Copiar a otros maestros</h3>
+        <p class="hint" style="margin:-6px 0 8px">Aplica estas mismas horas prohibidas a los maestros que marques (reemplaza las que tengan).</p>
+        <div id="mpCopia" class="mpcopia"></div>
+        <div class="acts"><button type="button" class="btn pri" id="mpCopiar">Copiar a los maestros marcados</button></div>
+      </div>
     </div>
   </div>
   <div class="panel"><h3>Maestros registrados <span id="mCuenta" class="hint"></span></h3><p class="hint" style="margin:-6px 0 10px">Edita el nombre largo, el nombre corto o las horas directo en la tabla; se guarda al salir de la casilla.</p><div id="mList"></div></div>
@@ -343,6 +379,26 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     <div class="acts"><button class="btn pri" id="gAdd">Agregar grupos</button></div>
   </div>
   <div class="panel"><h3>Grupos registrados</h3><div id="gList"></div></div>
+  <div class="panel" id="phPanel">
+    <h3>Horas prohibidas</h3>
+    <p class="hint" style="margin:-6px 0 10px">Módulos en los que el grupo no puede tener ninguna clase (por ejemplo, horas reservadas para Tecnología, honores o actividades). Toca un módulo para prohibirlo o permitirlo; se guarda al instante.</p>
+    <div class="hbar"><label>Grupo<select id="phSel" style="min-width:240px"></select></label>
+      <div class="phley"><span class="phk ok">✓</span> Disponible <span class="phk no">✕</span> Prohibida <span class="phk fu"></span> Fuera de su turno</div></div>
+    <div class="phwrap"><div class="wrap" id="phGrid"></div>
+      <div class="phside">
+        <div id="phCuenta" class="note ok"></div>
+        <div class="acts" style="margin-top:0">
+          <button type="button" class="btn sm" id="phTodo">Permitir todo</button>
+          <button type="button" class="btn sm" id="phUltimas">Prohibir última hora</button>
+        </div>
+        <h3 style="margin-top:16px">Copiar a otros grupos</h3>
+        <p class="hint" style="margin:-6px 0 8px">Aplica estas mismas horas prohibidas a los grupos que marques (reemplaza las que tengan).</p>
+        <div id="phCopia"></div>
+        <p id="phCopiaSel" class="hint" style="margin:6px 0 0"></p>
+        <div class="acts"><button type="button" class="btn pri" id="phCopiar">Copiar a los grupos marcados</button></div>
+      </div>
+    </div>
+  </div>
   <div class="panel">
     <h3>Horario por grupo</h3>
     <p class="hint" style="margin:-6px 0 10px">Materias y profesores de cada módulo y día, según el horario en uso.</p>
@@ -493,7 +549,8 @@ const MOT = {
   maxmaestro:'el maestro llegó a su máximo de clases del día',
   regla:'una condicionante lo impide',
   bloqueTurno:'los grupos del bloque son de turnos distintos',
-  maxdobles:'la asignatura ya tiene sus días de horas seguidas'
+  maxdobles:'la asignatura ya tiene sus días de horas seguidas',
+  prohibida:'es una hora prohibida para el grupo'
 };
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -530,6 +587,8 @@ const subLargo = s => s ? s.nombre.toUpperCase() + (s.abrev ? ` (${s.abrev.toUpp
 const maxDobles = c => (+c?.maxDia||1) < 2 ? 0 : (c.maxDobles!=null && c.maxDobles!=='' ? +c.maxDobles : 1);
 const capSemana = c => 5 + Math.min(5, maxDobles(c)) * ((+c?.maxDia||1) - 1);
 const textoCap = c => (+c?.maxDia||1) < 2 ? 'máximo 1 por día' : `máximo ${c.maxDia} por día en ${maxDobles(c)} día(s) de la semana`;
+// Horas prohibidas de un grupo que caen dentro de su turno
+function prohibidasDe(gid){ const g = S.grupos[gid]; if (!g) return 0; const ok = new Set(slotsTurno(g.turno).map(x => x.ini)); return Object.keys(g.prohibidas||{}).filter(k => ok.has(+k.split('-')[1])).length; }
 const libresDe = m => m.libres ? (+m.numLibres || 3) : 0;
 const gruposOrden = () => Object.entries(S.grupos).sort((a,b) => (a[1].grado-b[1].grado) || cmp(a[1].grupo,b[1].grupo));
 const maestrosOrden = () => Object.entries(S.maestros).sort((a,b) => cmp(a[1].nombre,b[1].nombre));
@@ -625,6 +684,7 @@ function resetM(){
   $('#mSave').textContent='Agregar maestro'; $('#mCancel').hidden=true; renderBloq();
 }
 function renderBloq(){
+  if (!$('#mBloq')) return;
   const m = {turnos:{matutino:$('#mTM').checked, mixto:$('#mTX').checked}};
   const rows = conReceso(filas(turnosDe(m)));
   if (!rows.length){ $('#mBloq').innerHTML='<p class="empty">Selecciona al menos un turno.</p>'; return; }
@@ -649,7 +709,7 @@ function saveM(){
   const dup = Object.entries(S.maestros).find(([id,m]) => id!==editM && cmp(m.nombre,nombre)===0);
   if (dup) return toast('Ya existe un maestro con ese nombre.','err');
   const data = {nombre, alias:$('#mAlias').value.trim().toUpperCase(), horasContrato:horas, maxDia:+$('#mMaxDia').value||0, turnos,
-    libres:$('#mLibres').checked, numLibres:+$('#mNumLibres').value||3, bloqueos:bloq};
+    libres:$('#mLibres').checked, numLibres:+$('#mNumLibres').value||3, bloqueos:(editM ? S.maestros[editM]?.bloqueos : null) || {}};
   const id = editM || newId(), eraEdit = !!editM;
   db.ref(`${ROOT}/maestros/${id}`).set(data)
     .then(() => { toast(eraEdit ? 'Maestro actualizado.' : 'Maestro agregado.'); resetM(); })
@@ -689,9 +749,49 @@ function renderMaestros(){
       <td><input class="in-hor" type="number" min="1" max="60" data-id="${id}" data-campo="horasContrato" value="${c||''}" aria-label="Horas que trabaja"></td>
       <td><div class="carga ${cls}"><div class="bar"><i style="width:${pct}%"></i></div><span>${fg} frente a grupo${lib?` + ${lib} libres`:''} de ${c} h</span></div></td>
       <td>${turnosDe(m).map(nomTurno).join(' y ')}${Object.keys(m.bloqueos||{}).length?`<br><small class="hint">${Object.keys(m.bloqueos).length} módulos no disponible</small>`:''}</td>
-      <td class="ra"><button class="btn sm" data-edit="${id}">Disponibilidad</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
+      <td class="ra"><button class="btn sm" data-edit="${id}">Horas prohibidas</button> <button class="btn sm" data-form="${id}">Turnos</button> <button class="btn sm del" data-del="${id}">Eliminar</button></td></tr>`;
   });
   $('#mList').innerHTML = h + '</tbody></table></div>';
+}
+function renderProhibidasM(){
+  const items = maestrosOrden().map(([id,m]) => [id, `${m.nombre} (${aliasDe(m)})`]);
+  fillSelect($('#mpSel'), items);
+  if (!$('#mpSel').value && items[0]) $('#mpSel').value = items[0][0];
+  const mid = $('#mpSel').value, m = S.maestros[mid];
+  if (!m){ $('#mpGrid').innerHTML = '<p class="empty">Aún no hay maestros.</p>'; $('#mpCuenta').hidden = true; return; }
+  const pro = m.bloqueos || {}, suyas = new Set(filas(turnosDe(m)).map(r => r.ini));
+  let h = '<table class="phg"><thead><tr><th>#</th><th class="pht">Hora</th>' + DIAS.map((d,i) => `<th><button type="button" data-mpdia="${i}" title="Cambiar todo el ${d.toLowerCase()}">${d.slice(0,3)}</button></th>`).join('') + '</tr></thead><tbody>';
+  let n = 0;
+  conReceso(filas(TURNOS)).forEach(r => {
+    if (r.receso){ h += `<tr class="phrec"><td></td><td class="pht">${fmt(toMin(S.config.recesoIni))}</td><td colspan="5">Receso</td></tr>`; return; }
+    n++; const ok = suyas.has(r.ini);
+    h += `<tr><th>${n}</th><td class="pht"><button type="button" ${ok?`data-mphora="${r.ini}"`:'disabled'} title="Cambiar esta hora de lunes a viernes">${fmt(r.ini)} a ${fmt(r.fin)}</button></td>`;
+    for (let d=0; d<5; d++){
+      const k = `${d}-${r.ini}`;
+      if (!ok){ h += '<td><span class="phc fu" title="Fuera de los turnos del maestro"></span></td>'; continue; }
+      const no = !!pro[k];
+      h += `<td><button type="button" class="phc ${no?'no':'ok'}" data-mpk="${k}" aria-pressed="${no}" aria-label="${DIAS[d]} ${fmt(r.ini)}: ${no?'prohibida':'disponible'}">${no?'✕':'✓'}</button></td>`;
+    }
+    h += '</tr>';
+  });
+  $('#mpGrid').innerHTML = h + '</tbody></table>';
+  const total = suyas.size*5, np = Object.keys(pro).filter(k => suyas.has(+k.split('-')[1])).length, disp = total-np;
+  const fg = horasMaestro(mid), lib = libresDe(m), nec = fg+lib, c = $('#mpCuenta');
+  c.hidden = false; c.className = 'note ' + (nec > disp ? 'bad' : nec === disp ? 'warn' : 'ok');
+  c.innerHTML = `<b>${esc(m.nombre)}</b>: ${disp} de ${total} módulos disponibles${np?` (${np} prohibidos)`:''}.<br>Necesita <b>${nec}</b> (${fg} frente a grupo${lib?` + ${lib} libres`:''}) de sus ${m.horasContrato||0} h de trabajo` +
+    (nec > disp ? `. <b>Le faltan ${nec-disp} módulos</b>: permite más horas o quita carga.` : nec === disp ? '. Sin margen: el generador tendrá poca libertad.' : `. Margen de ${disp-nec} módulos.`);
+  if (!$('#mpCopia').querySelector(':focus')){
+    const marcados = new Set($$('#mpCopia input:checked').map(i => i.value));
+    $('#mpCopia').innerHTML = maestrosOrden().filter(([id]) => id!==mid).map(([id,x]) => `<label class="pill${marcados.has(id)?' on':''}"><input type="checkbox" value="${id}" ${marcados.has(id)?'checked':''} hidden>${esc(aliasDe(x))}</label>`).join('');
+  }
+}
+function cambiarProhibidasM(keys){
+  const mid = $('#mpSel').value, m = S.maestros[mid]; if (!m) return;
+  const suyas = new Set(filas(turnosDe(m)).map(r => r.ini));
+  keys = keys.filter(k => suyas.has(+k.split('-')[1])); if (!keys.length) return;
+  const pro = m.bloqueos || {}, todas = keys.every(k => pro[k]), u = {};
+  keys.forEach(k => u[`${ROOT}/maestros/${mid}/bloqueos/${k}`] = todas ? null : true);
+  db.ref().update(u);
 }
 function guardarCampoMaestro(inp){
   const id = inp.dataset.id, campo = inp.dataset.campo, m = S.maestros[id]; if (!m) return;
@@ -1158,7 +1258,7 @@ function makeEngine(){
   const conf = L => L.bloque ? S.bloques[L.aid.slice(2)] : S.asignaturas[L.sid];
   function check(L,d,s){
     const g0 = G[L.gids[0]]; if (!g0) return 'grupo';
-    for (const gid of L.gids){ const g = G[gid]; if (!g || g.turno !== g0.turno) return 'bloqueTurno'; if (grid[gid][d][s.n-1]) return 'grupo'; }
+    for (const gid of L.gids){ const g = G[gid]; if (!g || g.turno !== g0.turno) return 'bloqueTurno'; if (g.prohibidas?.[`${d}-${s.ini}`]) return 'prohibida'; if (grid[gid][d][s.n-1]) return 'grupo'; }
     for (const mid of L.mids){
       const m = S.maestros[mid];
       if (m.turnos && m.turnos[g0.turno]===false) return 'turno';
@@ -1388,9 +1488,9 @@ function diagnostico(){
   TURNOS.forEach(t => { if (calcSlots(S.config,t).er.length) err.push(`Corrige el turno ${nomTurno(t).toLowerCase()} en el paso 1.`); });
   if (!asigValidas().length && !bloquesDe().length) err.push('Aún no hay carga académica: asigna materias a los maestros en el paso 5.');
   gruposOrden().forEach(([gid,g]) => {
-    const cap = slotsTurno(g.turno).length*5, hr = horasGrupo(gid);
+    const cap = slotsTurno(g.turno).length*5 - prohibidasDe(gid), hr = horasGrupo(gid);
     if (!hr) av.push(`${gName(g)} no tiene asignaturas.`);
-    else if (hr > cap) err.push(`${gName(g)} tiene ${hr} horas asignadas y solo caben ${cap} en su turno.`);
+    else if (hr > cap) err.push(`${gName(g)} tiene ${hr} horas asignadas y solo tiene ${cap} módulos disponibles${prohibidasDe(gid)?` (${prohibidasDe(gid)} prohibidos)`:''}.`);
     else if (hr < cap) av.push(`${gName(g)}: quedarán ${cap-hr} módulos sin clase en la semana.`);
   });
   maestrosOrden().forEach(([mid,m]) => {
@@ -1591,7 +1691,7 @@ function tablaDeGrupo(gid, ajuste=false){
     const aid = cl[`${d}-${s.n}`];
     const attrs = ajuste ? ` data-d="${d}" data-n="${s.n}" tabindex="0"` : '';
     const extra = ajuste ? ' pick' + (selCell && selCell.d===d && selCell.n===s.n ? ' sel' : '') : '';
-    if (!aid) return {cls:extra.trim(), attrs};
+    if (!aid) return {cls:(extra + (g.prohibidas?.[`${d}-${r.ini}`] ? ' prohib' : '')).trim(), attrs};
     if (String(aid).startsWith('B:')){ const b = S.bloques[aid.slice(2)]; return {key:aid, cls:'blk'+extra, attrs, html:`<div class="big">${esc((b?.nombre||'BLOQUE').toUpperCase())}</div>`}; }
     const a = S.asignaciones[aid]; if (!a) return {cls:extra.trim(), attrs, html:'<b>(eliminada)</b>'};
     const su = S.asignaturas[a.asignaturaId], m = S.maestros[a.maestroId];
@@ -1623,7 +1723,7 @@ function tablaGeneral(){
       const s = porIni.get(r.ini), sep = i===0 ? ' sdia' : '';
       if (!s){ h += `<td class="fuera${sep}"></td>`; return; }
       const aid = cl[gid]?.[`${d}-${s.n}`];
-      if (!aid){ h += `<td class="${sep.trim()}"></td>`; return; }
+      if (!aid){ h += `<td class="${(g.prohibidas?.[`${d}-${s.ini}`] ? 'prohib' : '') + sep}"></td>`; return; }
       if (String(aid).startsWith('B:')){ const b = S.bloques[aid.slice(2)]; h += `<td class="blk${sep}" title="${esc(b?.nombre||'')}"><b>${esc((b?.nombre||'BLQ').slice(0,4).toUpperCase())}</b></td>`; return; }
       const a = S.asignaciones[aid], su = S.asignaturas[a?.asignaturaId], m = S.maestros[a?.maestroId];
       h += `<td class="cs${sep}" style="--c:${esc(su?.color||'#ccc')}" title="${esc(su?.nombre||'')} con ${esc(m?.nombre||'')}"><b>${esc(subCorto(su).slice(0,6))}</b><span>${esc(aliasDe(m))}</span></td>`;
@@ -1631,6 +1731,53 @@ function tablaGeneral(){
     h += '</tr>';
   });
   return h + '</tbody></table>';
+}
+function renderProhibidas(){
+  const items = gruposOrden().map(([id,g]) => [id, `${gName(g)} (${nomTurno(g.turno)})`]);
+  fillSelect($('#phSel'), items);
+  if (!$('#phSel').value && items[0]) $('#phSel').value = items[0][0];
+  const gid = $('#phSel').value, g = S.grupos[gid];
+  if (!g){ $('#phGrid').innerHTML = '<p class="empty">Aún no hay grupos.</p>'; $('#phCuenta').hidden = true; return; }
+  const pro = g.prohibidas || {}, enTurno = new Map(slotsTurno(g.turno).map(x => [x.ini, x]));
+  const rows = conReceso(filas(TURNOS));
+  let h = '<table class="phg"><thead><tr><th>#</th><th class="pht">Hora</th>' + DIAS.map((d,i) => `<th><button type="button" data-phdia="${i}" title="Cambiar todo el ${d.toLowerCase()}">${d.slice(0,3)}</button></th>`).join('') + '</tr></thead><tbody>';
+  rows.forEach(r => {
+    if (r.receso){ h += `<tr class="phrec"><td></td><td class="pht">${fmt(toMin(S.config.recesoIni))}</td><td colspan="5">Receso</td></tr>`; return; }
+    const s = enTurno.get(r.ini);
+    h += `<tr><th>${s ? s.n : ''}</th><td class="pht"><button type="button" ${s?`data-phhora="${r.ini}"`:'disabled'} title="Cambiar esta hora de lunes a viernes">${fmt(r.ini)} a ${fmt(r.fin)}</button></td>`;
+    for (let d=0; d<5; d++){
+      const k = `${d}-${r.ini}`;
+      if (!s){ h += '<td><span class="phc fu" title="Fuera del turno del grupo"></span></td>'; continue; }
+      const no = !!pro[k];
+      h += `<td><button type="button" class="phc ${no?'no':'ok'}" data-phk="${k}" aria-pressed="${no}" aria-label="${DIAS[d]} ${fmt(r.ini)}: ${no?'prohibida':'disponible'}">${no?'✕':'✓'}</button></td>`;
+    }
+    h += '</tr>';
+  });
+  $('#phGrid').innerHTML = h + '</tbody></table>';
+  const total = enTurno.size*5, np = prohibidasDe(gid), disp = total-np, hr = horasGrupo(gid);
+  const c = $('#phCuenta'); c.hidden = false;
+  c.className = 'note ' + (hr > disp ? 'bad' : hr === disp ? 'ok' : 'warn');
+  c.innerHTML = `<b>${gName(g)}</b>: ${disp} de ${total} módulos disponibles${np?` (${np} prohibidos)`:''}.<br>Horas asignadas al grupo: <b>${hr}</b>` +
+    (hr > disp ? `. <b>Faltan ${hr-disp} módulos</b>: permite más horas o quita carga.` : hr < disp ? `. Quedarán ${disp-hr} módulos sin clase.` : '. Cuadra exacto.');
+  if (!$('#phCopia').querySelector(':focus')) renderChips('phCopia');
+  marcarChips('phCopia');
+}
+function cambiarProhibidas(keys){
+  const gid = $('#phSel').value, g = S.grupos[gid]; if (!g) return;
+  const ok = new Set(slotsTurno(g.turno).map(x => x.ini));
+  keys = keys.filter(k => ok.has(+k.split('-')[1]));
+  if (!keys.length) return;
+  const pro = g.prohibidas || {}, todas = keys.every(k => pro[k]), u = {};
+  keys.forEach(k => u[`${ROOT}/grupos/${gid}/prohibidas/${k}`] = todas ? null : true);
+  db.ref().update(u);
+}
+function copiarProhibidas(){
+  const gid = $('#phSel').value, g = S.grupos[gid]; if (!g) return;
+  const dest = $$('#phCopia input:checked').map(i => i.value).filter(x => x!==gid);
+  if (!dest.length) return toast('Marca los grupos a los que quieres copiar.','err');
+  const u = {};
+  dest.forEach(d => u[`${ROOT}/grupos/${d}/prohibidas`] = g.prohibidas ? {...g.prohibidas} : null);
+  db.ref().update(u).then(() => { toast(`Horas prohibidas copiadas a ${dest.length} grupo(s).`); $$('#phCopia input:checked').forEach(i => i.checked=false); marcarChips('phCopia'); });
 }
 function renderGrupoHorario(){
   const items = [['*','Todos los grupos en una tabla'], ...gruposOrden().map(([id,g]) => [id, `${gName(g)} (${nomTurno(g.turno)})`])];
@@ -1795,7 +1942,7 @@ function renderNav(){
   $('#hdrEscuela').textContent = S.config.escuela ? `${S.config.escuela}, ciclo ${S.config.ciclo}` : `Ciclo ${S.config.ciclo}`;
 }
 function refrescar(){
-  renderNav(); renderMaestros(); renderAsignaturas(); renderGrupos(); renderGrupoHorario(); renderCarga(); renderBloques(); renderReglas();
+  renderNav(); renderMaestros(); renderProhibidasM(); renderAsignaturas(); renderGrupos(); renderProhibidas(); renderGrupoHorario(); renderCarga(); renderBloques(); renderReglas();
   renderDiag(); renderResultado(); renderHorario();
   if (!editM) renderBloq();
 }
@@ -1855,17 +2002,45 @@ $('#bImport').onchange = e => {
 };
 
 $('#mSave').onclick = saveM; $('#mCancel').onclick = resetM;
-$('#mBloqClear').onclick = () => { bloq = {}; renderBloq(); };
 $('#mTM').onchange = renderBloq; $('#mTX').onchange = renderBloq;
-$('#mBloq').onclick = e => { const b = e.target.closest('.bq'); if (!b) return; const k = b.dataset.k; if (bloq[k]) delete bloq[k]; else bloq[k] = true; renderBloq(); $(`#mBloq [data-k="${k}"]`)?.focus(); };
+$('#mpSel').onchange = () => { $$('#mpCopia input').forEach(i => i.checked=false); renderProhibidasM(); };
+$('#mpGrid').onclick = e => {
+  const c = e.target.closest('[data-mpk]'), dia = e.target.closest('[data-mpdia]'), hora = e.target.closest('[data-mphora]');
+  if (c) cambiarProhibidasM([c.dataset.mpk]);
+  if (dia) cambiarProhibidasM(filas(TURNOS).map(r => `${dia.dataset.mpdia}-${r.ini}`));
+  if (hora) cambiarProhibidasM([0,1,2,3,4].map(d => `${d}-${hora.dataset.mphora}`));
+};
+$('#mpTodo').onclick = () => { const mid = $('#mpSel').value; if (mid) db.ref(`${ROOT}/maestros/${mid}/bloqueos`).remove(); };
+$('#mpCopia').addEventListener('change', e => { const l = e.target.closest('.pill'); if (l) l.classList.toggle('on', e.target.checked); });
+$('#mpCopiar').onclick = () => {
+  const mid = $('#mpSel').value, m = S.maestros[mid]; if (!m) return;
+  const dest = $$('#mpCopia input:checked').map(i => i.value);
+  if (!dest.length) return toast('Marca los maestros a los que quieres copiar.','err');
+  const u = {}; dest.forEach(d => u[`${ROOT}/maestros/${d}/bloqueos`] = m.bloqueos ? {...m.bloqueos} : null);
+  db.ref().update(u).then(() => { toast(`Horas prohibidas copiadas a ${dest.length} maestro(s).`); $$('#mpCopia input').forEach(i => { i.checked=false; i.closest('.pill').classList.remove('on'); }); });
+};
 $('#mList').addEventListener('change', e => { if (e.target.matches('input[data-campo]')) guardarCampoMaestro(e.target); });
 $('#mList').addEventListener('keydown', e => { if (e.key==='Enter' && e.target.matches('input[data-campo]')) e.target.blur(); });
-$('#mList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a) editarM(a.dataset.edit); if (d) borrarM(d.dataset.del); };
+$('#mList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a){ $('#mpSel').value = a.dataset.edit; renderProhibidasM(); $('#mpPanel').scrollIntoView({behavior:'smooth'}); } if (d) borrarM(d.dataset.del); const f = e.target.closest('[data-form]'); if (f) editarM(f.dataset.form); };
 
 $('#aSave').onclick = saveA; $('#aCancel').onclick = resetA; $('#aSeed').onclick = seedA;
 $('#aList').onclick = e => { const a = e.target.closest('[data-edit]'), d = e.target.closest('[data-del]'); if (a) editarA(a.dataset.edit); if (d) borrarA(d.dataset.del); };
 
 $('#gAdd').onclick = addGrupos;
+$('#phSel').onchange = renderProhibidas;
+$('#phGrid').onclick = e => {
+  const c = e.target.closest('[data-phk]'), dia = e.target.closest('[data-phdia]'), hora = e.target.closest('[data-phhora]');
+  if (c) cambiarProhibidas([c.dataset.phk]);
+  if (dia) cambiarProhibidas(filas(TURNOS).map(r => `${dia.dataset.phdia}-${r.ini}`));
+  if (hora) cambiarProhibidas([0,1,2,3,4].map(d => `${d}-${hora.dataset.phhora}`));
+};
+$('#phTodo').onclick = () => { const gid = $('#phSel').value; if (gid) db.ref(`${ROOT}/grupos/${gid}/prohibidas`).remove(); };
+$('#phUltimas').onclick = () => { const g = S.grupos[$('#phSel').value]; if (!g) return; const sl = slotsTurno(g.turno), ult = sl[sl.length-1]; if (!ult) return;
+  const u = {}; for (let d=0; d<5; d++) u[`${ROOT}/grupos/${$('#phSel').value}/prohibidas/${d}-${ult.ini}`] = true; db.ref().update(u); };
+$('#phCopia').onclick = e => { const b = e.target.closest('[data-grado]'); if (!b) return;
+  const ins = [...b.parentElement.querySelectorAll('input')], todos = ins.every(i => i.checked); ins.forEach(i => i.checked = !todos); marcarChips('phCopia'); };
+$('#phCopia').addEventListener('change', () => marcarChips('phCopia'));
+$('#phCopiar').onclick = copiarProhibidas;
 $('#gvSel').onchange = () => { $('#gvSel').dataset.elegido = '1'; renderGrupoHorario(); };
 $('#gLetras').addEventListener('keydown', e => { if (e.key==='Enter') addGrupos(); });
 $('#gList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) borrarG(d.dataset.del); };
