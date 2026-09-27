@@ -186,6 +186,17 @@ table.hr{width:100%;border-collapse:collapse;table-layout:fixed;font-size:7.5pt;
 /* Horas prohibidas */
 .phwrap{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .phside{flex:1;min-width:260px}
+.phc.lock{cursor:default;opacity:.75}
+.phc.otro{background:#eceff4;color:var(--suave);cursor:default;font-size:.8rem}
+.dhead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px}
+.dhead .btn{margin-left:auto}
+details.como{display:inline-block;margin-left:8px;vertical-align:top}
+details.como summary{display:inline-block;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--tinta2);background:var(--papel);border:1px solid var(--linea);border-radius:99px;padding:1px 9px;list-style:none}
+details.como summary::-webkit-details-marker{display:none}
+details.como[open]{display:block;margin:6px 0 8px;background:var(--papel);border-radius:8px;padding:8px 10px}
+details.como[open] summary{background:#fff}
+details.como p{margin:6px 0;font-size:.9rem}
+.panel.flash{box-shadow:0 0 0 3px var(--oro);transition:box-shadow .3s}
 .mpcopia{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow:auto}
 table.phg{border-collapse:separate;border-spacing:4px}
 .phg th{font-size:.8rem;color:var(--suave);font-weight:700;padding:0 4px}
@@ -364,6 +375,17 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
     </div>
   </div>
   <div class="panel"><h3>Asignaturas registradas</h3><div id="aList"></div></div>
+  <div class="panel" id="apPanel">
+    <h3>Horas prohibidas de la asignatura</h3>
+    <p class="hint" style="margin:-6px 0 10px">Módulos en los que esta asignatura no se puede dar. Elige "Todos los grupos" para prohibirla en toda la escuela, o un grupo para un caso particular (por ejemplo, Tutoría de 2ºI). Se guarda al instante.</p>
+    <div class="hbar"><label>Asignatura<select id="apSel" style="min-width:240px"></select></label>
+      <label>Aplicar a<select id="apAlc" style="min-width:240px"></select></label>
+      <div class="phley"><span class="phk ok">✓</span> Disponible <span class="phk no">✕</span> Prohibida <span class="phk fu"></span> Fuera de turno</div></div>
+    <div class="phwrap"><div class="wrap" id="apGrid"></div>
+      <div class="phside"><div id="apCuenta" class="note ok"></div>
+        <div class="acts" style="margin-top:0"><button type="button" class="btn sm" id="apTodo">Permitir todo</button></div></div>
+    </div>
+  </div>
 </section>
 
 <!-- 4 GRUPOS -->
@@ -550,7 +572,8 @@ const MOT = {
   regla:'una condicionante lo impide',
   bloqueTurno:'los grupos del bloque son de turnos distintos',
   maxdobles:'la asignatura ya tiene sus días de horas seguidas',
-  prohibida:'es una hora prohibida para el grupo'
+  prohibida:'es una hora prohibida para el grupo',
+  prohibidaAsig:'es una hora prohibida para la asignatura'
 };
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -913,6 +936,64 @@ function aplicarPersonal(){
   db.ref().update(u).then(() => { toast(`Lista aplicada: ${ac} actualizados, ${nu} nuevos.`); $('#pPrev').innerHTML=''; $('#pTexto').value=''; cambiosPersonal = []; });
 }
 
+/* ===================== HORAS PROHIBIDAS DE ASIGNATURAS ===================== */
+function renderProhibidasA(){
+  const items = asigOrden().map(([id,a]) => [id, a.nombre]);
+  fillSelect($('#apSel'), items);
+  if (!$('#apSel').value && items[0]) $('#apSel').value = items[0][0];
+  const sid = $('#apSel').value, su = S.asignaturas[sid];
+  if (!su){ $('#apGrid').innerHTML = '<p class="empty">Aún no hay asignaturas.</p>'; $('#apCuenta').hidden = true; return; }
+  const asg = asigValidas().filter(([,a]) => a.asignaturaId===sid).sort((x,y) => (S.grupos[x[1].grupoId].grado - S.grupos[y[1].grupoId].grado) || cmp(S.grupos[x[1].grupoId].grupo, S.grupos[y[1].grupoId].grupo));
+  fillSelect($('#apAlc'), [['*','Todos los grupos'], ...asg.map(([aid,a]) => [aid, `${gName(S.grupos[a.grupoId])} con ${aliasDe(S.maestros[a.maestroId])}`])]);
+  const aid = $('#apAlc').value !== '*' ? $('#apAlc').value : null, a = aid && S.asignaciones[aid], g = a && S.grupos[a.grupoId], m = a && S.maestros[a.maestroId];
+  const suPro = su.prohibidas || {}, enTurno = g ? new Set(slotsTurno(g.turno).map(x => x.ini)) : null;
+  let h = '<table class="phg"><thead><tr><th>#</th><th class="pht">Hora</th>' + DIAS.map((d,i) => `<th><button type="button" data-apdia="${i}" title="Cambiar todo el ${d.toLowerCase()}">${d.slice(0,3)}</button></th>`).join('') + '</tr></thead><tbody>';
+  let n = 0;
+  conReceso(filas(TURNOS)).forEach(r => {
+    if (r.receso){ h += `<tr class="phrec"><td></td><td class="pht">${fmt(toMin(S.config.recesoIni))}</td><td colspan="5">Receso</td></tr>`; return; }
+    n++; const ok = !enTurno || enTurno.has(r.ini);
+    h += `<tr><th>${n}</th><td class="pht"><button type="button" ${ok?`data-aphora="${r.ini}"`:'disabled'} title="Cambiar esta hora de lunes a viernes">${fmt(r.ini)} a ${fmt(r.fin)}</button></td>`;
+    for (let d=0; d<5; d++){
+      const k = `${d}-${r.ini}`;
+      if (!ok){ h += '<td><span class="phc fu" title="Fuera del turno del grupo"></span></td>'; continue; }
+      if (a && suPro[k]){ h += '<td><span class="phc no lock" title="Prohibida para toda la asignatura">✕</span></td>'; continue; }
+      if (a && g.prohibidas?.[k]){ h += '<td><span class="phc otro" title="Hora prohibida del grupo">G</span></td>'; continue; }
+      if (a && m?.bloqueos?.[k]){ h += '<td><span class="phc otro" title="Hora prohibida del maestro">M</span></td>'; continue; }
+      const no = !!(a ? a.prohibidas?.[k] : suPro[k]);
+      h += `<td><button type="button" class="phc ${no?'no':'ok'}" data-apk="${k}" aria-pressed="${no}" aria-label="${DIAS[d]} ${fmt(r.ini)}: ${no?'prohibida':'disponible'}">${no?'✕':'✓'}</button></td>`;
+    }
+    h += '</tr>';
+  });
+  $('#apGrid').innerHTML = h + '</tbody></table>';
+  const c = $('#apCuenta'); c.hidden = false;
+  const E = makeEngine();
+  if (a){
+    const cu = capacidadUtil(lessonOf(aid), E), hs = horasDe(a);
+    c.className = 'note ' + (cu.cap < hs ? 'bad' : cu.cap === hs ? 'warn' : 'ok');
+    c.innerHTML = `<b>${esc(su.nombre)} en ${gName(g)}</b> con ${esc(m.nombre)}: ${cu.util} módulos donde coinciden grupo, maestro y asignatura; caben hasta <b>${cu.cap}</b> h y necesita <b>${hs}</b>.` +
+      (cu.cap < hs ? ' <b>No alcanza</b>: libera horas aquí, del grupo o del maestro.' : '') + '<br><small>G = hora prohibida del grupo · M = hora prohibida del maestro.</small>';
+  } else {
+    const mal = asg.filter(([x,y]) => capacidadUtil(lessonOf(x), E).cap < horasDe(y));
+    const np = Object.keys(suPro).length;
+    c.className = 'note ' + (mal.length ? 'bad' : 'ok');
+    c.innerHTML = `<b>${esc(su.nombre)}</b>: ${np ? `${np} módulos prohibidos para todos sus grupos` : 'sin horas prohibidas'}; se imparte en ${asg.length} grupo(s).` +
+      (mal.length ? `<br><b>No le alcanza el espacio en:</b> ${mal.map(([,y]) => gName(S.grupos[y.grupoId])).join(', ')}.` : '');
+  }
+}
+function cambiarProhibidasA(keys){
+  const sid = $('#apSel').value, su = S.asignaturas[sid]; if (!su) return;
+  const aid = $('#apAlc').value !== '*' ? $('#apAlc').value : null, a = aid && S.asignaciones[aid];
+  let pro, base;
+  if (a){
+    const g = S.grupos[a.grupoId], m = S.maestros[a.maestroId], enT = new Set(slotsTurno(g.turno).map(x => x.ini));
+    keys = keys.filter(k => enT.has(+k.split('-')[1]) && !su.prohibidas?.[k] && !g.prohibidas?.[k] && !m?.bloqueos?.[k]);
+    pro = a.prohibidas || {}; base = `${ROOT}/asignaciones/${aid}/prohibidas`;
+  } else { pro = su.prohibidas || {}; base = `${ROOT}/asignaturas/${sid}/prohibidas`; }
+  if (!keys.length) return;
+  const todas = keys.every(k => pro[k]), u = {};
+  keys.forEach(k => u[`${base}/${k}`] = todas ? null : true);
+  db.ref().update(u);
+}
 /* ===================== ASIGNATURAS ===================== */
 let editA = null;
 function resetA(){
@@ -1266,6 +1347,7 @@ function makeEngine(){
       for (const b of tBusy[mid][d]) if (s.ini<b[1] && b[0]<s.fin) return 'choque';
       if (+m.maxDia && tDay[mid][d] >= +m.maxDia) return 'maxmaestro';
     }
+    if (!L.bloque){ const k = `${d}-${s.ini}`; if (S.asignaturas[L.sid]?.prohibidas?.[k] || S.asignaciones[L.aid]?.prohibidas?.[k]) return 'prohibidaAsig'; }
     const c = conf(L), ya = sd(L)[d];
     if (ya.length >= (+c.maxDia||1)) return 'maxdia';
     if (ya.length === 1 && sd(L).filter((x,i) => i!==d && x.length>=2).length >= maxDobles(c)) return 'maxdobles';
@@ -1483,52 +1565,159 @@ function firma(){
 }
 
 /* ===================== DIAGNÓSTICO Y GENERACIÓN ===================== */
-function diagnostico(){
-  const err = [], av = [];
-  TURNOS.forEach(t => { if (calcSlots(S.config,t).er.length) err.push(`Corrige el turno ${nomTurno(t).toLowerCase()} en el paso 1.`); });
-  if (!asigValidas().length && !bloquesDe().length) err.push('Aún no hay carga académica: asigna materias a los maestros en el paso 5.');
+/* ===================== DIAGNÓSTICO A FONDO ===================== */
+const MOT_CORTO = {prohibida:'horas prohibidas del grupo', prohibidaAsig:'horas prohibidas de la asignatura', bloqueo:'horas prohibidas del maestro',
+  regla:'condicionantes', turno:'turno del maestro', bloqueTurno:'grupos de turnos distintos'};
+// Cuántas horas por semana caben como máximo para una clase, solo con las reglas fijas (sin contar otras clases)
+function capacidadUtil(L, E){
+  const g = E.G[L.gids[0]], porDia = DIAS.map(() => 0), tally = {};
+  if (!g) return {cap:0, util:0, tally};
+  for (let d=0; d<5; d++) for (const s of g.slots){ const r = E.check(L,d,s); if (!r) porDia[d]++; else tally[r] = (tally[r]||0)+1; }
+  const c = L.bloque ? S.bloques[L.aid.slice(2)] : S.asignaturas[L.sid], md = +c?.maxDia||1;
+  const extras = porDia.map(x => Math.min(x,md)-1).filter(x => x>0).sort((a,b) => b-a).slice(0, maxDobles(c)).reduce((a,b) => a+b, 0);
+  return {cap:porDia.filter(x => x>0).length + extras, util:porDia.reduce((a,b) => a+b, 0), tally};
+}
+const textoTally = t => Object.entries(t).filter(([k]) => MOT_CORTO[k]).sort((a,b) => b[1]-a[1]).map(([k,n]) => `${MOT_CORTO[k]} (${n} módulos)`).join(', ');
+// Revisa el horario en uso contra los datos actuales
+function revisarGenerado(){
+  const gen = S.generado; if (!gen) return null;
+  const E = makeEngine(), viol = [], puestas = {};
+  for (const gid in (gen.clases||{})){
+    if (!E.G[gid]){ viol.push('Hay clases de un grupo que ya fue eliminado'); continue; }
+    for (const k in gen.clases[gid]){
+      const aid = gen.clases[gid][k], L = lessonOf(aid), [d,n] = k.split('-').map(Number), s = E.G[gid].slots[n-1];
+      if (!L){ viol.push(`${gName(S.grupos[gid])} ${DIAS[d].toLowerCase()} módulo ${n}: la clase ya no existe en la carga`); continue; }
+      if (!s){ viol.push(`${gName(S.grupos[gid])}: una clase quedó fuera de los módulos del turno`); continue; }
+      if (E.grid[gid][d][n-1]) continue;
+      const r = E.check(L,d,s);
+      if (r && r!=='grupo'){
+        const nom = L.bloque ? S.bloques[L.aid.slice(2)]?.nombre : S.asignaturas[L.sid]?.nombre;
+        viol.push(`${gName(S.grupos[gid])} ${DIAS[d].toLowerCase()} ${fmt(s.ini)}, ${nom}: ${MOT[r]}`);
+      }
+      E.place(L,d,s); puestas[aid] = (puestas[aid]||0)+1;
+    }
+  }
+  let faltan = 0;
+  asigValidas().forEach(([aid,a]) => { faltan += Math.max(0, horasDe(a) - (puestas[aid]||0)); });
+  bloquesDe().forEach(([bid,b]) => { if (lessonOf('B:'+bid)) faltan += Math.max(0, (+b.horas||0) - (puestas['B:'+bid]||0)); });
+  return {viol, faltan, vieja: gen.firma !== firma()};
+}
+let diagItems = [], diagHora = null;
+function diagnosticoDetallado(){
+  const it = [], E = makeEngine();
+  const add = (nivel, texto, como, ir) => it.push({nivel, texto, como, ir});
+  TURNOS.forEach(t => { if (calcSlots(S.config,t).er.length) add('err', `El turno ${nomTurno(t).toLowerCase()} tiene errores de horario.`,
+    'Revisa entrada, salida, receso y duración del módulo en el paso 1 hasta que la tarjeta del turno salga en verde.', {v:'config'}); });
+  if (!asigValidas().length && !bloquesDe().length) add('err','Aún no hay carga académica.','Asigna materias y grupos a cada maestro en Carga académica.',{v:'carga'});
+  // Grupos
   gruposOrden().forEach(([gid,g]) => {
-    const cap = slotsTurno(g.turno).length*5 - prohibidasDe(gid), hr = horasGrupo(gid);
-    if (!hr) av.push(`${gName(g)} no tiene asignaturas.`);
-    else if (hr > cap) err.push(`${gName(g)} tiene ${hr} horas asignadas y solo tiene ${cap} módulos disponibles${prohibidasDe(gid)?` (${prohibidasDe(gid)} prohibidos)`:''}.`);
-    else if (hr < cap) av.push(`${gName(g)}: quedarán ${cap-hr} módulos sin clase en la semana.`);
+    const disp = slotsTurno(g.turno).length*5 - prohibidasDe(gid), hr = horasGrupo(gid);
+    if (!hr) add('av', `${gName(g)} no tiene asignaturas.`, 'Asígnale sus materias en Carga académica, o elimínalo en Grupos si no existe.', {v:'carga'});
+    else if (hr > disp) add('err', `${gName(g)} tiene ${hr} horas asignadas y solo ${disp} módulos disponibles${prohibidasDe(gid)?` (${prohibidasDe(gid)} prohibidos)`:''}.`,
+      `Le sobran ${hr-disp} horas. Permite algunas de sus horas prohibidas o quita horas de su carga.`, {v:'grupos', sel:['phSel',gid], panel:'phPanel'});
+    else if (hr < disp) add('av', `${gName(g)}: quedarán ${disp-hr} módulos sin clase en la semana.`,
+      'Es normal si el grupo sale antes algunos días. Si debería tener todas sus horas llenas, le falta carga: revisa sus materias.', {v:'grupos', sel:['gvSel',gid]});
   });
+  // Maestros
   maestrosOrden().forEach(([mid,m]) => {
-    const fg = horasMaestro(mid), lib = libresDe(m), c = +m.horasContrato||0;
-    if (!fg){ av.push(`${m.nombre} no tiene grupos asignados.`); return; }
-    if (fg+lib > c) err.push(`${m.nombre}: ${fg} h frente a grupo${lib?` + ${lib} libres`:''} superan sus ${c} h de trabajo.`);
-    else if (fg+lib < c) av.push(`${m.nombre}: le quedan ${c-fg-lib} h de su contrato sin asignar.`);
-    const disp = filas(turnosDe(m)).length*5 - Object.keys(m.bloqueos||{}).length;
-    if (fg+lib > disp) err.push(`${m.nombre} necesita ${fg+lib} módulos pero solo está disponible en ${disp}.`);
-    if (+m.maxDia && fg > m.maxDia*5) err.push(`${m.nombre}: ${fg} clases no caben con máximo ${m.maxDia} por día.`);
+    const fg = horasMaestro(mid), lib = libresDe(m), c = +m.horasContrato||0, nec = fg+lib;
+    const suyas = new Set(filas(turnosDe(m)).map(r => r.ini));
+    const disp = suyas.size*5 - Object.keys(m.bloqueos||{}).filter(k => suyas.has(+k.split('-')[1])).length;
+    if (!fg){ add('av', `${m.nombre} no tiene grupos asignados.`, 'Asígnale materias en Carga académica, o elimínalo en Maestros si ya no trabaja en la escuela.', {v:'carga', sel:['kFiltro',mid]}); return; }
+    if (nec > c) add('err', `${m.nombre}: necesita ${nec} h (${fg} frente a grupo${lib?` + ${lib} libres`:''}) y trabaja ${c} h.`,
+      `Si sus horas de trabajo están mal, corrígelas en la tabla de Maestros. Si están bien, quítale ${nec-c} h de carga${lib?' o desactiva sus horas libres':''}.`, {v:'carga', sel:['kFiltro',mid]});
+    else if (nec < c) add('av', `${m.nombre}: le quedan ${c-nec} h de su contrato sin asignar.`,
+      'Asígnale más grupos, activa horas libres en "Turnos", o baja sus horas de trabajo si ya está completo.', {v:'carga', sel:['kFiltro',mid]});
+    if (nec > disp) add('err', `${m.nombre} necesita ${nec} módulos y solo está disponible en ${disp}.`,
+      `Permite ${nec-disp} o más de sus horas prohibidas, o actívale el otro turno.`, {v:'maestros', sel:['mpSel',mid], panel:'mpPanel'});
+    else if (nec === disp) add('av', `${m.nombre} queda sin margen: ${disp} módulos disponibles para ${nec} horas.`,
+      'Puede generarse, pero cuesta más acomodar todo. Si quedan clases sin acomodar, permítele 1 o 2 módulos más.', {v:'maestros', sel:['mpSel',mid], panel:'mpPanel'});
+    if (+m.maxDia && fg > m.maxDia*5) add('err', `${m.nombre}: ${fg} clases no caben con máximo ${m.maxDia} por día.`, 'Sube su máximo de clases por día en "Turnos" o quítale carga.', {v:'maestros'});
   });
+  // Asignaciones
   const vistos = {};
-  asigValidas().forEach(([,a]) => {
+  asigValidas().forEach(([aid,a]) => {
     const s = S.asignaturas[a.asignaturaId], g = S.grupos[a.grupoId], m = S.maestros[a.maestroId], h = horasDe(a);
-    if (m.turnos && m.turnos[g.turno]===false) err.push(`${m.nombre} tiene ${s.nombre} en ${gName(g)}, pero no trabaja en el turno ${nomTurno(g.turno).toLowerCase()}.`);
-    if (h > capSemana(s)) err.push(`${s.nombre} en ${gName(g)}: ${h} horas no caben con ${textoCap(s)}.`);
+    const nom = `${s.nombre} de ${aliasDe(m)} en ${gName(g)}`;
+    if (m.turnos && m.turnos[g.turno]===false){ add('err', `${nom}: el maestro no trabaja en el turno ${nomTurno(g.turno).toLowerCase()}.`,
+      'Márcale ese turno en "Turnos" del maestro, o asigna la materia a otro maestro.', {v:'carga', sel:['kFiltro',a.maestroId]}); return; }
+    if (h > capSemana(s)) add('err', `${nom}: ${h} horas no caben con ${textoCap(s)}.`, 'Edita la asignatura y sube el máximo por día o los días con horas juntas.', {v:'asignaturas'});
+    else {
+      const cu = capacidadUtil(lessonOf(aid), E);
+      if (cu.cap < h) add('err', `${nom}: necesita ${h} h y solo hay lugar para ${cu.cap}.`,
+        `Solo quedan ${cu.util} módulos donde coinciden el grupo, el maestro y la asignatura. Lo impiden: ${textoTally(cu.tally) || 'la regla de horas por día'}. Libera algunas de esas horas.`,
+        {v:'asignaturas', sel:['apSel',a.asignaturaId], sel2:['apAlc',aid], panel:'apPanel'});
+    }
     const k = a.grupoId+'|'+a.asignaturaId;
-    if (vistos[k]) av.push(`${gName(g)} tiene ${s.nombre} asignada a más de un maestro.`); vistos[k] = true;
+    if (vistos[k]) add('av', `${gName(g)} tiene ${s.nombre} asignada a más de un maestro.`, 'Si es un error, quita la asignación repetida en Carga académica (filtra por maestro).', {v:'carga'});
+    vistos[k] = true;
   });
+  // Bloques
   bloquesDe().forEach(([bid,b]) => {
     const L = lessonOf('B:'+bid), nom = `${b.nombre} ${bloqueEtiqueta(b)}`.trim();
-    if (!L){ err.push(`El bloque ${b.nombre} no tiene grupos.`); return; }
+    if (!L){ add('err', `El bloque ${b.nombre} no tiene grupos.`, 'Edítalo en Carga académica, Bloques de talleres, y márcale sus grupos, o elimínalo.', {v:'carga', panel:'bPanel'}); return; }
     const t0 = S.grupos[L.gids[0]].turno;
-    if (L.gids.some(g => S.grupos[g].turno !== t0)) err.push(`${nom}: sus grupos son de turnos distintos.`);
-    if (!L.mids.length) av.push(`${nom} no tiene maestros de taller.`);
-    if (+b.horas > capSemana(b)) err.push(`${nom}: ${b.horas} horas no caben con ${textoCap(b)}.`);
-    L.mids.forEach(mid => { const m = S.maestros[mid]; if (m.turnos && m.turnos[t0]===false) err.push(`${m.nombre} tiene taller en ${nom}, pero no trabaja en el turno ${nomTurno(t0).toLowerCase()}.`); });
+    if (L.gids.some(g => S.grupos[g].turno !== t0)){ add('err', `${nom}: sus grupos son de turnos distintos.`, 'Un bloque solo puede tener grupos del mismo turno. Edita el bloque.', {v:'carga', panel:'bPanel'}); return; }
+    if (!L.mids.length) add('av', `${nom} no tiene maestros de taller.`, 'Edita el bloque y agrega sus talleres.', {v:'carga', panel:'bPanel'});
+    const cu = capacidadUtil(L, E);
+    if (+b.horas > cu.cap) add('err', `${nom}: necesita ${b.horas} h y solo hay lugar para ${cu.cap}.`,
+      `Todos sus grupos y maestros deben estar libres a la vez. Lo impiden: ${textoTally(cu.tally) || 'la regla de horas por día'}.`, {v:'carga', panel:'bPanel'});
   });
-  return {err, av};
+  // Condicionantes que apuntan a algo borrado
+  Object.values(S.reglas).forEach(r => {
+    const ok = r.tipo==='asignatura' ? S.asignaturas[r.obj] : r.tipo==='maestro' ? S.maestros[r.obj] : S.grupos[r.obj];
+    if (!ok) add('av', 'Hay una condicionante de algo que ya fue eliminado.', 'Quítala en Condicionantes; aparece como "(eliminado)".', {v:'reglas'});
+  });
+  // Horario en uso
+  const rg = revisarGenerado();
+  if (rg){
+    if (rg.viol.length) add('err', `${rg.viol.length} clase(s) del horario en uso ya no cumplen tus datos actuales.`,
+      `Ejemplos: ${rg.viol.slice(0,4).join('; ')}. Genera de nuevo, o muévelas a mano en Vista previa con "Mover clases".`, null);
+    if (rg.faltan) add(rg.vieja ? 'av' : 'err', `Al horario en uso le faltan ${rg.faltan} sesiones de la carga actual.`,
+      rg.vieja ? 'Cambiaste la carga después de generar. Vuelve a generar para incluirlas.' : 'Genera de nuevo con más intentos o 3 propuestas; si siguen faltando, corrige los puntos en rojo de esta lista.', null);
+    else if (rg.vieja && !rg.viol.length) add('av', 'Cambiaste datos después de generar el horario en uso, aunque sigue siendo válido.', 'Si quieres que el horario tome los cambios, vuelve a generarlo.', null);
+  }
+  return it;
+}
+function diagnostico(){
+  const it = diagnosticoDetallado();
+  return {err: it.filter(x => x.nivel==='err').map(x => x.texto), av: it.filter(x => x.nivel==='av').map(x => x.texto)};
 }
 function sesionesTotales(){ return asigValidas().reduce((s,[,a]) => s+horasDe(a), 0) + bloquesDe().reduce((s,[bid,b]) => s+(lessonOf('B:'+bid) ? (+b.horas||0) : 0), 0); }
 function renderDiag(){
-  const {err, av} = diagnostico();
-  let h = `<div class="stats"><div><b>${sesionesTotales()}</b>sesiones por acomodar</div><div><b>${Object.keys(S.grupos).length}</b>grupos</div><div><b>${Object.keys(S.maestros).length}</b>maestros</div><div><b>${bloquesDe().length}</b>bloques de talleres</div><div><b>${Object.keys(S.reglas).length}</b>condicionantes</div></div>`;
+  diagItems = diagnosticoDetallado();
+  const err = diagItems.map((x,i) => [x,i]).filter(([x]) => x.nivel==='err'), av = diagItems.map((x,i) => [x,i]).filter(([x]) => x.nivel==='av');
+  const li = ([x,i]) => `<li>${esc(x.texto)}<details class="como"><summary>¿Cómo?</summary><p>${esc(x.como)}</p>${x.ir?`<button type="button" class="btn sm" data-ir="${i}">Ir a corregir</button>`:''}</details></li>`;
+  let h = `<div class="dhead"><h3 style="margin:0">Diagnóstico</h3><span class="hint">${diagHora ? `Última revisión a fondo: ${diagHora.toLocaleTimeString('es-MX')}` : 'Se revisa solo con cada cambio.'}</span>
+    <button type="button" class="btn" id="dRevisar">Volver a revisar a fondo</button></div>
+    <div class="stats"><div><b>${sesionesTotales()}</b>sesiones por acomodar</div><div><b>${Object.keys(S.grupos).length}</b>grupos</div><div><b>${Object.keys(S.maestros).length}</b>maestros</div><div><b>${bloquesDe().length}</b>bloques de talleres</div><div><b>${Object.keys(S.reglas).length}</b>condicionantes</div></div>`;
   if (!err.length && !av.length) h += '<div class="note ok">Todo listo. No se encontraron problemas.</div>';
-  if (err.length) h += `<h3 style="color:var(--mal)">Hay que corregir (${err.length})</h3><ul class="e">${err.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
-  if (av.length) h += `<h3 style="margin-top:14px;color:var(--aviso)">Avisos (${av.length})</h3><ul class="a">${av.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`;
+  if (err.length) h += `<h3 style="color:var(--mal)">Hay que corregir (${err.length})</h3><p class="hint" style="margin:-6px 0 6px">Impiden que el horario salga completo.</p><ul class="e">${err.map(li).join('')}</ul>`;
+  if (av.length) h += `<h3 style="margin-top:14px;color:var(--aviso)">Avisos (${av.length})</h3><p class="hint" style="margin:-6px 0 6px">No impiden generar; revisa si son intencionales.</p><ul class="a">${av.map(li).join('')}</ul>`;
   $('#diag').innerHTML = h;
+}
+async function revisarAFondo(){
+  const b = $('#dRevisar'); if (b){ b.disabled = true; b.textContent = 'Revisando…'; }
+  try {
+    const snap = await db.ref(ROOT).once('value');
+    aplicarDatos(snap.val() || {});
+    diagHora = new Date();
+    refrescar();
+    const n = diagItems.filter(x => x.nivel==='err').length, a = diagItems.filter(x => x.nivel==='av').length;
+    toast(n || a ? `Revisión completa: ${n} por corregir y ${a} avisos.` : 'Revisión completa: todo en orden.', n ? 'err' : 'ok');
+  } catch(e){ toast('No se pudo leer la base de datos: '+e.message,'err'); renderDiag(); }
+}
+function irACorregir(x){
+  if (!x?.ir) return;
+  show(x.ir.v);
+  [x.ir.sel, x.ir.sel2].forEach(par => {
+    if (!par) return;
+    const el = $('#'+par[0]); if (!el) return;
+    if (par[0]==='apSel') renderProhibidasA();
+    el.value = par[1]; el.dataset.elegido = '1'; el.dispatchEvent(new Event('change'));
+  });
+  const p = x.ir.panel && $('#'+x.ir.panel);
+  if (p) setTimeout(() => { p.scrollIntoView({behavior:'smooth'}); p.classList.add('flash'); setTimeout(() => p.classList.remove('flash'), 1600); }, 60);
 }
 let corriendo = false;
 // Mide la calidad de una propuesta: horas muertas de maestros y huecos de grupos
@@ -1942,7 +2131,7 @@ function renderNav(){
   $('#hdrEscuela').textContent = S.config.escuela ? `${S.config.escuela}, ciclo ${S.config.ciclo}` : `Ciclo ${S.config.ciclo}`;
 }
 function refrescar(){
-  renderNav(); renderMaestros(); renderProhibidasM(); renderAsignaturas(); renderGrupos(); renderProhibidas(); renderGrupoHorario(); renderCarga(); renderBloques(); renderReglas();
+  renderNav(); renderMaestros(); renderProhibidasM(); renderProhibidasA(); renderAsignaturas(); renderGrupos(); renderProhibidas(); renderGrupoHorario(); renderCarga(); renderBloques(); renderReglas();
   renderDiag(); renderResultado(); renderHorario();
   if (!editM) renderBloq();
 }
@@ -1958,11 +2147,15 @@ function show(v){
 
 /* ===================== CONEXIÓN ===================== */
 db.ref('.info/connected').on('value', s => { const on = !!s.val(); const el = $('#conn'); el.className = 'conn '+(on?'on':'off'); el.textContent = on ? 'En línea' : 'Sin conexión'; });
-db.ref(ROOT).on('value', snap => {
-  const v = snap.val() || {}, c = v.config || {};
+function aplicarDatos(v){
+  const c = v.config || {};
   S.config = {...clone(DEF), ...c, turnos:{matutino:{...DEF.turnos.matutino, ...(c.turnos?.matutino||{})}, mixto:{...DEF.turnos.mixto, ...(c.turnos?.mixto||{})}}};
   S.maestros = v.maestros || {}; S.asignaturas = v.asignaturas || {}; S.grupos = v.grupos || {};
   S.asignaciones = v.asignaciones || {}; S.reglas = v.reglas || {}; S.bloques = v.bloques || {}; S.generado = v.generado || null; S.propuestas = v.propuestas || null;
+}
+db.ref(ROOT).on('value', snap => {
+  const v = snap.val() || {};
+  aplicarDatos(v);
   if (!cargado){ cargado = true; fillCfg(S.config); resetA(); resetB(); sembrarPersonal(v); sembrarHorasGrado(v); ajustarCienciasArtes(v); }
   refrescar();
 }, err => toast('No se pudo leer la base de datos: '+err.message+'. Revisa las reglas de Realtime Database.','err'));
@@ -2078,6 +2271,20 @@ $('#rGrid').onclick = e => {
 $('#rList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/reglas/${d.dataset.del}`).remove().then(() => toast('Condicionante quitada.')); };
 
 $('#gRun').onclick = generar;
+$('#diag').addEventListener('click', e => {
+  if (e.target.id==='dRevisar') return revisarAFondo();
+  const b = e.target.closest('[data-ir]'); if (b) irACorregir(diagItems[+b.dataset.ir]);
+});
+$('#apSel').onchange = () => { $('#apAlc').value = '*'; renderProhibidasA(); };
+$('#apAlc').onchange = renderProhibidasA;
+$('#apGrid').onclick = e => {
+  const c = e.target.closest('[data-apk]'), dia = e.target.closest('[data-apdia]'), hora = e.target.closest('[data-aphora]');
+  if (c) cambiarProhibidasA([c.dataset.apk]);
+  if (dia) cambiarProhibidasA(filas(TURNOS).map(r => `${dia.dataset.apdia}-${r.ini}`));
+  if (hora) cambiarProhibidasA([0,1,2,3,4].map(d => `${d}-${hora.dataset.aphora}`));
+};
+$('#apTodo').onclick = () => { const sid = $('#apSel').value, aid = $('#apAlc').value; if (!sid) return;
+  db.ref(aid && aid!=='*' ? `${ROOT}/asignaciones/${aid}/prohibidas` : `${ROOT}/asignaturas/${sid}/prohibidas`).remove(); };
 $('#gRes').addEventListener('click', e => {
   const us = e.target.closest('[data-usar]'); if (us) usarPropuesta(us.dataset.usar);
   if (e.target.id==='gBorrar' && confirm('¿Borrar los horarios generados y sus propuestas? Los datos capturados no se tocan.')) db.ref(ROOT).update({generado:null, propuestas:null}).then(() => toast('Horarios borrados.')); });
