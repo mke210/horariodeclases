@@ -197,6 +197,10 @@ details.como[open]{display:block;margin:6px 0 8px;background:var(--papel);border
 details.como[open] summary{background:#fff}
 details.como p{margin:6px 0;font-size:.9rem}
 .panel.flash{box-shadow:0 0 0 3px var(--oro);transition:box-shadow .3s}
+.anl{border-top:1px solid var(--linea);padding:10px 0}
+.anl p{margin:0 0 4px}
+ul.sol{margin:6px 0 4px;padding-left:20px}
+ul.sol li{margin:4px 0}
 .mpcopia{display:flex;flex-wrap:wrap;gap:6px;max-height:220px;overflow:auto}
 table.phg{border-collapse:separate;border-spacing:4px}
 .phg th{font-size:.8rem;color:var(--suave);font-weight:700;padding:0 4px}
@@ -506,11 +510,20 @@ table.htal{border-collapse:collapse;margin:22px auto 0;font-size:8.5pt;font-fami
   <div class="panel">
     <div class="hbar">
       <label>Propuestas<small>horarios distintos para comparar</small><select id="gProps"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></label>
-      <label>Intentos<small>más intentos, mejor resultado</small><input id="gIntentos" type="number" min="1" max="200" value="10" style="width:110px"></label>
+      <label>Intentos por ronda<small>sigue en rondas hasta acomodar todo</small><input id="gIntentos" type="number" min="1" max="200" value="10" style="width:110px"></label>
       <button class="btn gold" id="gRun">Generar horario</button>
+      <button class="btn del" id="gStop" hidden>Detener</button>
     </div>
     <div id="gProg"></div>
+    <p class="hint" style="margin:6px 0 0">El generador no se detiene hasta acomodar todas las sesiones; solo entonces guarda y muestra el horario. Si una regla lo hace imposible, te dirá cuál y cómo resolverla.</p>
   </div>
+  <div id="gAnalisis"></div>
+  <div class="panel">
+    <h3>Análisis exacto</h3>
+    <p class="hint" style="margin:-6px 0 10px">Usa un solucionador matemático que revisa todas las combinaciones posibles. Te dice con certeza si existe un horario completo (y lo guarda) o, si no existe, qué reglas chocan y el cambio mínimo que lo resuelve. Necesita internet la primera vez para descargar el solucionador.</p>
+    <div class="hbar"><button class="btn pri" id="xRun">Analizar con solucionador exacto</button><button class="btn del" id="xStop" hidden>Detener</button><span id="xProg" class="hint"></span></div>
+  </div>
+  <div id="xRes"></div>
   <div id="gRes"></div>
 </section>
 
@@ -1498,7 +1511,7 @@ async function busquedaLocal(E, pend, rand, iters, progreso){
   pend.forEach(L => L.mids.forEach(m => cargaM[m] = (cargaM[m]||0)+1));
   const peso = Y => (Y.bloque ? 3 : 1) + Math.max(0, ...Y.mids.map(m => cargaM[m]||0)) / 15;
   for (let it=0; it<iters && pend.length; it++){
-    if (it % 1500 === 0){ progreso(it, mejor); await new Promise(r => setTimeout(r,0)); }
+    if (it % 1500 === 0){ progreso(it, mejor); await new Promise(r => setTimeout(r,0)); if (detener) break; }
     const pi = Math.floor(rand()*pend.length), L = pend[pi], g = E.G[L.gids[0]];
     let elegido = null, costoMin = Infinity;
     for (let d=0; d<5; d++) for (const s of g.slots){
@@ -1605,7 +1618,7 @@ function revisarGenerado(){
 let diagItems = [], diagHora = null;
 function diagnosticoDetallado(){
   const it = [], E = makeEngine();
-  const add = (nivel, texto, como, ir) => it.push({nivel, texto, como, ir});
+  const add = (nivel, texto, como, ir, extra) => it.push({nivel, texto, como, ir, ...(extra||{})});
   TURNOS.forEach(t => { if (calcSlots(S.config,t).er.length) add('err', `El turno ${nomTurno(t).toLowerCase()} tiene errores de horario.`,
     'Revisa entrada, salida, receso y duración del módulo en el paso 1 hasta que la tarjeta del turno salga en verde.', {v:'config'}); });
   if (!asigValidas().length && !bloquesDe().length) add('err','Aún no hay carga académica.','Asigna materias y grupos a cada maestro en Carga académica.',{v:'carga'});
@@ -1625,7 +1638,7 @@ function diagnosticoDetallado(){
     const disp = suyas.size*5 - Object.keys(m.bloqueos||{}).filter(k => suyas.has(+k.split('-')[1])).length;
     if (!fg){ add('av', `${m.nombre} no tiene grupos asignados.`, 'Asígnale materias en Carga académica, o elimínalo en Maestros si ya no trabaja en la escuela.', {v:'carga', sel:['kFiltro',mid]}); return; }
     if (nec > c) add('err', `${m.nombre}: necesita ${nec} h (${fg} frente a grupo${lib?` + ${lib} libres`:''}) y trabaja ${c} h.`,
-      `Si sus horas de trabajo están mal, corrígelas en la tabla de Maestros. Si están bien, quítale ${nec-c} h de carga${lib?' o desactiva sus horas libres':''}.`, {v:'carga', sel:['kFiltro',mid]});
+      `Si sus horas de trabajo están mal, corrígelas en la tabla de Maestros. Si están bien, quítale ${nec-c} h de carga${lib?' o desactiva sus horas libres':''}. (No impide generar el horario.)`, {v:'carga', sel:['kFiltro',mid]}, {suave:true});
     else if (nec < c) add('av', `${m.nombre}: le quedan ${c-nec} h de su contrato sin asignar.`,
       'Asígnale más grupos, activa horas libres en "Turnos", o baja sus horas de trabajo si ya está completo.', {v:'carga', sel:['kFiltro',mid]});
     if (nec > disp) add('err', `${m.nombre} necesita ${nec} módulos y solo está disponible en ${disp}.`,
@@ -1672,9 +1685,9 @@ function diagnosticoDetallado(){
   const rg = revisarGenerado();
   if (rg){
     if (rg.viol.length) add('err', `${rg.viol.length} clase(s) del horario en uso ya no cumplen tus datos actuales.`,
-      `Ejemplos: ${rg.viol.slice(0,4).join('; ')}. Genera de nuevo, o muévelas a mano en Vista previa con "Mover clases".`, null);
+      `Ejemplos: ${rg.viol.slice(0,4).join('; ')}. Genera de nuevo, o muévelas a mano en Vista previa con "Mover clases".`, null, {suave:true});
     if (rg.faltan) add(rg.vieja ? 'av' : 'err', `Al horario en uso le faltan ${rg.faltan} sesiones de la carga actual.`,
-      rg.vieja ? 'Cambiaste la carga después de generar. Vuelve a generar para incluirlas.' : 'Genera de nuevo con más intentos o 3 propuestas; si siguen faltando, corrige los puntos en rojo de esta lista.', null);
+      rg.vieja ? 'Cambiaste la carga después de generar. Vuelve a generar para incluirlas.' : 'Genera de nuevo; si siguen faltando, corrige los puntos en rojo de esta lista.', null, {suave:true});
     else if (rg.vieja && !rg.viol.length) add('av', 'Cambiaste datos después de generar el horario en uso, aunque sigue siendo válido.', 'Si quieres que el horario tome los cambios, vuelve a generarlo.', null);
   }
   return it;
@@ -1745,65 +1758,417 @@ function metricas(gen){
   });
   return {huecosMaestros:hm, huecosGrupos:hg};
 }
+let detener = false, respaldoExacto = null;
+/* ===================== ANÁLISIS EXACTO (solucionador HiGHS) ===================== */
+// Arma el modelo matemático: una variable por cada clase-día-módulo posible.
+// estricto: solo módulos permitidos. elástico: también los prohibidos, con costo, para hallar el cambio mínimo.
+function construirModelo(elastico){
+  const E = makeEngine(), clases = clasesModelo();
+  const V = [], fil = [], porGS = {}, porMD = {}, dia = {}, obj = [];
+  clases.forEach((c,ci) => {
+    const g0 = E.G[c.L.gids[0]]; c.vars = [];
+    for (let d=0; d<5; d++) for (const s of g0.slots){
+      const tr = trabasFijas(c.L,d,s,E);
+      if (tr.length && !elastico) continue;
+      const i = V.length; V.push({ci, d, s, tr}); c.vars.push(i);
+      if (tr.length) obj.push(`${tr.reduce((t,x) => t + (x.tipo==='regla' ? 30 : 10), 0)} x${i}`);
+      c.L.gids.forEach(gid => (porGS[`${gid}|${d}|${s.n}`] ??= []).push(i));
+      c.L.mids.forEach(mid => (porMD[`${mid}|${d}`] ??= []).push(i));
+      ((dia[ci] ??= {})[d] ??= []).push(i);
+    }
+  });
+  const suma = l => l.map(i => `x${i}`).join(' + ');
+  let r = 0, bins = V.map((_,i) => `x${i}`), imposible = [];
+  clases.forEach((c,ci) => {
+    if (c.vars.length < c.h){ imposible.push(c); return; }
+    fil.push(`r${r++}: ${suma(c.vars)} = ${c.h}`);
+    const md = +c.conf?.maxDia || 1, dob = maxDobles(c.conf), ys = [];
+    Object.entries(dia[ci] || {}).forEach(([d,l]) => {
+      if (md >= 2 && dob > 0){ const y = `y${ci}_${d}`; bins.push(y); ys.push(y); fil.push(`r${r++}: ${suma(l)} - ${md-1} ${y} <= 1`); }
+      else fil.push(`r${r++}: ${suma(l)} <= 1`);
+      if (c.conf?.doble && md === 2){
+        const sl = l.map(i => V[i]).sort((a,b) => a.s.ini-b.s.ini);
+        for (let a=0; a<sl.length; a++) for (let b=a+1; b<sl.length; b++)
+          if (sl[a].s.fin !== sl[b].s.ini) fil.push(`r${r++}: x${V.indexOf(sl[a])} + x${V.indexOf(sl[b])} <= 1`);
+      }
+    });
+    if (ys.length && dob < 5) fil.push(`r${r++}: ${ys.join(' + ')} <= ${dob}`);
+  });
+  Object.values(porGS).forEach(l => { if (l.length > 1) fil.push(`r${r++}: ${suma(l)} <= 1`); });
+  Object.entries(porMD).forEach(([k,l]) => {
+    const puntos = [...new Set(l.map(i => V[i].s.ini))];
+    puntos.forEach(p => { const en = l.filter(i => V[i].s.ini <= p && p < V[i].s.fin); if (en.length > 1) fil.push(`r${r++}: ${suma(en)} <= 1`); });
+    const m = S.maestros[k.split('|')[0]];
+    if (+m?.maxDia) fil.push(`r${r++}: ${suma(l)} <= ${+m.maxDia}`);
+  });
+  const lp = `Minimize\n obj: ${obj.length ? obj.join(' + ') : '0 x0'}\nSubject To\n${fil.map(x => ' '+x).join('\n')}\nBinaries\n ${bins.join(' ')}\nEnd\n`;
+  return {lp, V, clases, imposible};
+}
+// ---- Solucionador en segundo plano (Web Worker con HiGHS desde jsDelivr) ----
+const HIGHS_URL = 'https://cdn.jsdelivr.net/npm/highs@1.15.3/build/';
+const WORKER_SRC = `importScripts('${HIGHS_URL}highs.js');
+let h = null;
+onmessage = async e => {
+  try {
+    if (!h) h = await Module({locateFile: f => '${HIGHS_URL}' + f});
+    const r = h.solve(e.data.lp, e.data.opt || {});
+    const cols = r.Columns ? Object.values(r.Columns).filter(c => c.Primal > 0.5 && c.Name[0]==='x').map(c => c.Name) : null;
+    postMessage({id:e.data.id, ok:true, Status:r.Status, obj:r.ObjectiveValue, cols});
+  } catch(err){ h = null; postMessage({id:e.data.id, ok:false, error:String(err && err.message || err)}); }
+};`;
+let solver = null, solverPend = {};
+function resolver(lp, opt){
+  return new Promise((res, rej) => {
+    if (!solver){
+      solver = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], {type:'text/javascript'})));
+      solver.onmessage = e => { const p = solverPend[e.data.id]; delete solverPend[e.data.id]; if (p) (e.data.ok ? p.res(e.data) : p.rej(new Error(e.data.error))); };
+      solver.onerror = e => { Object.values(solverPend).forEach(p => p.rej(new Error('No se pudo cargar el solucionador (¿sin internet?)'))); solverPend = {}; solver = null; };
+    }
+    const id = Date.now() + Math.random();
+    solverPend[id] = {res, rej};
+    solver.postMessage({id, lp, opt});
+  });
+}
+function detenerSolver(){ if (solver){ solver.terminate(); solver = null; } Object.values(solverPend).forEach(p => p.rej(new Error('detenido'))); solverPend = {}; }
+// Aplica cambios de forma temporal sobre los datos en memoria, ejecuta fn y los deshace
+function conCambios(u, fn){
+  const undo = [];
+  for (const [path,val] of Object.entries(u || {})){
+    const ks = path.replace(ROOT+'/','').split('/'); let o = S;
+    for (let i=0; i<ks.length-1; i++){ if (o[ks[i]] == null){ undo.push([o, ks[i], undefined, false]); o[ks[i]] = {}; } o = o[ks[i]]; }
+    const k = ks[ks.length-1]; undo.push([o, k, o[k], k in o]);
+    if (val == null) delete o[k]; else o[k] = val;
+  }
+  try { return fn(); } finally { undo.reverse().forEach(([o,k,v,had]) => { if (had) o[k] = v; else delete o[k]; }); }
+}
+// ---- Revisión exacta por flujo: grupo por grupo y maestro por maestro ----
+class Flujo {
+  constructor(){ this.g = []; }
+  nodo(){ this.g.push([]); return this.g.length-1; }
+  arista(u,v,c){ this.g[u].push({v, c, r:this.g[v].length}); this.g[v].push({v:u, c:0, r:this.g[u].length-1}); }
+  max(s,t){
+    let f = 0;
+    for (;;){
+      const prev = new Array(this.g.length).fill(null); prev[s] = [-1,-1]; const q = [s];
+      while (q.length && prev[t] === null){ const u = q.shift(); this.g[u].forEach((e,i) => { if (e.c > 0 && prev[e.v] === null){ prev[e.v] = [u,i]; q.push(e.v); } }); }
+      if (prev[t] === null) return f;
+      let b = Infinity;
+      for (let v=t; v!==s; ){ const [u,i] = prev[v]; b = Math.min(b, this.g[u][i].c); v = u; }
+      for (let v=t; v!==s; ){ const [u,i] = prev[v], e = this.g[u][i]; e.c -= b; this.g[v][e.r].c += b; v = u; }
+      f += b;
+    }
+  }
+  alcanzables(s){ const seen = new Set([s]), q = [s]; while (q.length){ const u = q.shift(); for (const e of this.g[u]) if (e.c > 0 && !seen.has(e.v)){ seen.add(e.v); q.push(e.v); } } return seen; }
+}
+function clasesModelo(){
+  const clases = [];
+  asigValidas().forEach(([aid,a]) => { const L = lessonOf(aid); if (L) clases.push({L, h:horasDe(a), conf:S.asignaturas[a.asignaturaId]}); });
+  bloquesDe().forEach(([bid,b]) => { const L = lessonOf('B:'+bid); if (L && L.gids.every(g => S.grupos[g].turno===S.grupos[L.gids[0]].turno)) clases.push({L, h:+b.horas||0, conf:b}); });
+  return clases;
+}
+function revisarPorFlujo(){
+  const E = makeEngine(), clases = clasesModelo(), out = [];
+  const ents = [
+    ...gruposOrden().map(([id,g]) => ({nombre:gName(g), cls:clases.filter(c => c.L.gids.includes(id)), clave:(d,s) => `${d}|${s.n}`})),
+    ...maestrosOrden().map(([id,m]) => ({nombre:m.nombre, cls:clases.filter(c => c.L.mids.includes(id)), clave:(d,s) => `${d}|${s.ini}`}))
+  ];
+  for (const ent of ents){
+    if (!ent.cls.length) continue;
+    const F = new Flujo(), S0 = F.nodo(), T = F.nodo(), slots = {}, nodoC = [];
+    let total = 0;
+    ent.cls.forEach(c => {
+      const g0 = E.G[c.L.gids[0]], cn = F.nodo(), md = +c.conf?.maxDia||1, dob = maxDobles(c.conf);
+      nodoC.push(cn); total += c.h; F.arista(S0, cn, c.h);
+      const ex = md >= 2 && dob > 0 ? F.nodo() : null; if (ex !== null) F.arista(cn, ex, dob*(md-1));
+      for (let d=0; d<5; d++){
+        const cd = F.nodo(); F.arista(cn, cd, 1); if (ex !== null) F.arista(ex, cd, md-1);
+        for (const s of g0.slots){
+          if (trabasFijas(c.L,d,s,E).length) continue;
+          const k = ent.clave(d,s); if (slots[k] === undefined){ slots[k] = F.nodo(); F.arista(slots[k], T, 1); }
+          F.arista(cd, slots[k], 1);
+        }
+      }
+    });
+    const f = F.max(S0, T);
+    if (f < total){
+      const R = F.alcanzables(S0), K = ent.cls.filter((c,i) => R.has(nodoC[i]));
+      const nec = K.reduce((s,c) => s+c.h, 0);
+      const usados = Object.values(slots).filter(n => R.has(n)).length;
+      out.push({ent:ent.nombre, K, nec, caben:nec-(total-f), usados, falta:total-f});
+    }
+  }
+  return out;
+}
+// Arma y guarda un horario a partir de la solución del solucionador
+function genDesdeSolucion(modelo, cols){
+  const E = makeEngine();
+  cols.forEach(n => { const v = modelo.V[+n.slice(1)]; if (v) E.place(modelo.clases[v.ci].L, v.d, v.s); });
+  const lib = asignarLibres(E), clases = {};
+  for (const gid in E.grid) E.grid[gid].forEach((dia,d) => dia.forEach((aid,i) => { if (aid) (clases[gid] ??= {})[`${d}-${i+1}`] = aid; }));
+  const total = sesionesTotales();
+  const gen = {fecha:Date.now(), firma:firma(), total, colocadas:total, clases, libres:lib.mapa, avisosLibres:lib.avisos, faltantes:[], exacto:true};
+  gen.metricas = metricas(gen);
+  return gen;
+}
+async function probarCambios(u, seg){
+  const m = conCambios(u, () => construirModelo(false));
+  if (m.imposible.length) return false;
+  const r = await resolver(m.lp, {time_limit:seg||30});
+  return r.Status === 'Optimal' ? true : r.Status === 'Infeasible' ? false : null;
+}
+// Análisis exacto completo. Devuelve {factible, gen} o {factible:false, conflictos, cambios}
+async function analisisExacto(avance){
+  avance('Construyendo el modelo matemático…');
+  const m = construirModelo(false);
+  if (m.imposible.length){
+    return {factible:false, conflictos:revisarPorFlujo(), cambios:null, sinLugar:m.imposible};
+  }
+  avance(`Resolviendo ${m.V.length.toLocaleString('es-MX')} posibilidades con el solucionador exacto…`);
+  const r = await resolver(m.lp, {time_limit:90});
+  if (r.Status === 'Optimal') return {factible:true, gen:genDesdeSolucion(m, r.cols)};
+  if (r.Status !== 'Infeasible') return {factible:null, estado:r.Status};
+  avance('Está comprobado que no existe horario. Buscando la causa…');
+  const conflictos = revisarPorFlujo();
+  // Candidatos: las trabas que más estorban a las clases en conflicto
+  const E = makeEngine(), cuenta = new Map();
+  const focos = conflictos.length ? [...new Set(conflictos.flatMap(c => c.K))] : [];
+  focos.forEach(c => { const g0 = E.G[c.L.gids[0]]; for (let d=0; d<5; d++) for (const s of g0.slots){ const tr = trabasFijas(c.L,d,s,E); if (tr.length === 1){ const o = cuenta.get(tr[0].txt) || {...tr[0], n:0}; o.n++; cuenta.set(tr[0].txt, o); } } });
+  const cand = [...cuenta.values()].sort((a,b) => b.n-a.n).slice(0,8), cambios = [];
+  for (let i=0; i<cand.length; i++){
+    avance(`Comprobando soluciones: ${i+1} de ${cand.length}…`);
+    if (await probarCambios(cand[i].u, 20)) cambios.push({...cand[i], comprobado:true});
+    if (cambios.length >= 3) break;
+  }
+  let conjunto = null;
+  if (!cambios.length){
+    // Modelo elástico: permite horas prohibidas con costo, luego se queda solo con lo indispensable
+    avance('Buscando el conjunto mínimo de cambios…');
+    const me = construirModelo(true);
+    const re = await resolver(me.lp, {time_limit:40});
+    if (re.cols){
+      const mapa = new Map();
+      re.cols.forEach(n => { const v = me.V[+n.slice(1)]; (v?.tr||[]).forEach(t => mapa.set(t.txt, t)); });
+      let lista = [...mapa.values()];
+      for (let i=lista.length-1; i>=0 && lista.length>1; i--){
+        avance(`Reduciendo a lo indispensable: ${lista.length} cambios…`);
+        const sin = lista.filter((_,j) => j!==i), u = Object.assign({}, ...sin.map(t => t.u));
+        if (await probarCambios(u, 20)) lista = sin;
+      }
+      const uAll = Object.assign({}, ...lista.map(t => t.u));
+      if (lista.length && await probarCambios(uAll, 30)) conjunto = lista;
+    }
+  }
+  return {factible:false, conflictos, cambios, conjunto};
+}
+let exactoOpc = [];
+function renderExacto(res){
+  exactoOpc = [];
+  const btn = (o) => { exactoOpc.push(o); return `<button type="button" class="btn sm" data-xaplicar="${exactoOpc.length-1}">Aplicar</button>`; };
+  let h = '<div class="panel"><h3>Análisis exacto</h3>';
+  if (res.factible === true) h += '<div class="note ok"><b>Comprobado: sí existe un horario completo</b> con todas tus reglas.</div>';
+  else if (res.factible === null) h += `<div class="note warn">El solucionador no terminó a tiempo (${esc(res.estado)}). El problema es muy grande para decidirlo rápido; el generador normal sigue siendo la mejor opción.</div>`;
+  else {
+    h += '<div class="note bad"><b>Comprobado: con las reglas actuales no existe ningún horario</b> que acomode todas las sesiones. No es falta de intentos: hay que cambiar algo.</div>';
+    (res.sinLugar||[]).forEach(c => { h += `<p>• <b>${esc(nomClase(c.L))}</b> necesita ${c.h} h y no tiene suficientes módulos permitidos.</p>`; });
+    if (res.conflictos?.length){
+      h += '<h3 style="margin-top:12px">Dónde está el choque</h3><ul class="msgs">' + res.conflictos.slice(0,6).map(c =>
+        `<li><b>${esc(c.ent)}</b>: ${c.K.map(k => esc(nomClase(k.L))).join('; ')} necesitan <b>${c.nec} h</b> entre todas, pero con las horas permitidas solo caben <b>${c.caben}</b>${c.usados===1 ? ' (compiten por el mismo módulo)' : c.usados ? ` (compiten por los mismos ${c.usados} módulos)` : ''}.</li>`).join('') + '</ul>';
+    } else h += '<p class="hint">No hay un choque dentro de un solo grupo o maestro: es la combinación de varios. Abajo va el cambio mínimo que lo resuelve.</p>';
+    if (res.cambios?.length){
+      h += '<h3 style="margin-top:12px">Cambios que lo resuelven (comprobados)</h3><p class="hint" style="margin:-6px 0 6px">Con cualquiera de estos, el solucionador verificó que sí existe horario completo.</p><ul class="sol">' +
+        res.cambios.map(o => `<li>✔ ${esc(o.txt)} ${btn(o)}</li>`).join('') + '</ul>';
+    } else if (res.conjunto?.length){
+      h += '<h3 style="margin-top:12px">Cambio mínimo comprobado</h3><p class="hint" style="margin:-6px 0 6px">Con estos cambios juntos sí existe horario, y ninguno sobra.</p><ul class="sol">' +
+        res.conjunto.map(o => `<li>✔ ${esc(o.txt)}</li>`).join('') + `</ul>${btn({txt:'todos', u:Object.assign({}, ...res.conjunto.map(o => o.u))}).replace('Aplicar','Aplicar todos')}`;
+    } else if (!res.sinLugar?.length) h += '<p class="hint">No se encontró un cambio único que lo resuelva. Revisa los choques de arriba: quita carga a ese grupo o maestro, o libera varias de sus horas.</p>';
+  }
+  $('#xRes').innerHTML = h + '</div>';
+}
+async function correrExacto(){
+  if (corriendo) return;
+  corriendo = true; $('#xRun').disabled = true; $('#gRun').disabled = true; $('#xStop').hidden = false;
+  const av = t => $('#xProg').textContent = t;
+  try {
+    const res = await analisisExacto(av);
+    renderExacto(res);
+    if (res.factible && res.gen){
+      res.gen.propuesta = 'px';
+      await db.ref(ROOT).update({generado:clone(res.gen), ['propuestas/px']:clone(res.gen)});
+      toast('Comprobado: existe horario completo. Quedó guardado como "Propuesta exacta".');
+    }
+  } catch(e){ if (e.message !== 'detenido') toast('Análisis exacto: '+e.message,'err'); }
+  av(''); corriendo = false; $('#xRun').disabled = false; $('#gRun').disabled = false; $('#xStop').hidden = true;
+}
+/* ===================== ANÁLISIS DE SESIONES PENDIENTES ===================== */
+function reglaImpide(r, L, d, s, g0){
+  const hit = (r.tipo==='asignatura'&&r.obj===L.sid) || (r.tipo==='maestro'&&L.mids.includes(r.obj)) || (r.tipo==='grupo'&&L.gids.includes(r.obj));
+  if (!hit) return false;
+  const dias = arr(r.dias), mods = arr(r.mods), k = `${d}-${s.ini}`;
+  return (r.cond==='noDias' && dias.includes(d)) || (r.cond==='soloDias' && !dias.includes(d)) || (r.cond==='noMods' && mods.includes(s.n)) ||
+    (r.cond==='soloMods' && !mods.includes(s.n)) || (r.cond==='noUltimo' && s.n===g0.slots.length) ||
+    (r.cond==='noCeldas' && !!r.celdas?.[k]) || (r.cond==='soloCeldas' && !r.celdas?.[k]);
+}
+// Todas las reglas fijas que impiden poner la clase en ese día y hora, cada una con la forma de liberarla
+function trabasFijas(L, d, s, E){
+  const k = `${d}-${s.ini}`, t = [], g0 = E.G[L.gids[0]], dia = DIAS[d].toLowerCase(), dur = +S.config.modDur;
+  L.gids.forEach(gid => { const g = S.grupos[gid]; if (g?.prohibidas?.[k]) t.push({tipo:'prohibida', txt:`Quitar la hora prohibida de ${gName(g)} el ${dia} a las ${fmt(s.ini)}`, u:{[`${ROOT}/grupos/${gid}/prohibidas/${k}`]:null}}); });
+  L.mids.forEach(mid => {
+    const m = S.maestros[mid];
+    if (m.turnos && m.turnos[g0.turno]===false) t.push({tipo:'turno', txt:`Activar el turno ${nomTurno(g0.turno).toLowerCase()} a ${aliasDe(m)}`, u:{[`${ROOT}/maestros/${mid}/turnos/${g0.turno}`]:true}});
+    Object.keys(m.bloqueos||{}).forEach(bk => { const [bd,bi] = bk.split('-').map(Number);
+      if (bd===d && s.ini < bi+dur && bi < s.fin) t.push({tipo:'bloqueo', txt:`Permitir a ${aliasDe(m)} el ${dia} a las ${fmt(bi)}`, u:{[`${ROOT}/maestros/${mid}/bloqueos/${bk}`]:null}}); });
+  });
+  if (!L.bloque){
+    const su = S.asignaturas[L.sid], a = S.asignaciones[L.aid];
+    if (su?.prohibidas?.[k]) t.push({tipo:'prohibidaAsig', txt:`Quitar la hora prohibida de ${su.nombre} (todos los grupos) el ${dia} a las ${fmt(s.ini)}`, u:{[`${ROOT}/asignaturas/${L.sid}/prohibidas/${k}`]:null}});
+    if (a?.prohibidas?.[k]) t.push({tipo:'prohibidaAsig', txt:`Quitar la hora prohibida de ${su.nombre} en ${gName(S.grupos[a.grupoId])} el ${dia} a las ${fmt(s.ini)}`, u:{[`${ROOT}/asignaciones/${L.aid}/prohibidas/${k}`]:null}});
+  }
+  Object.entries(S.reglas).forEach(([rid,r]) => { if (reglaImpide(r,L,d,s,g0)) t.push({tipo:'regla', txt:`Quitar la condicionante: ${reglaTxt(r).replace(/<[^>]+>/g,'')}`, u:{[`${ROOT}/reglas/${rid}`]:null}}); });
+  return t;
+}
+const nomClase = L => L.bloque ? `${S.bloques[L.aid.slice(2)]?.nombre} ${bloqueEtiqueta(S.bloques[L.aid.slice(2)])}` :
+  `${S.asignaturas[L.sid]?.nombre} de ${aliasDe(S.maestros[L.mids[0]])} en ${gName(S.grupos[L.gids[0]])}`;
+let analisisOpc = [];
+function analizarPendientes(E, faltan){
+  const por = {}; faltan.forEach(L => { (por[L.aid] ??= {L, n:0}).n++; });
+  return Object.values(por).map(({L,n}) => {
+    const g = E.G[L.gids[0]], opc = new Map(), causas = {};
+    let total = 0;
+    for (let d=0; d<5; d++) for (const s of g.slots){
+      total++;
+      const r = E.check(L,d,s); if (!r) continue;
+      const fijas = trabasFijas(L,d,s,E), clave = fijas.length ? fijas[0].tipo : r;
+      causas[clave] = (causas[clave]||0)+1;
+      if (fijas.length === 1){
+        const ocupado = L.gids.some(gid => E.grid[gid][d][s.n-1]) || L.mids.some(m => E.tBusy[m][d].some(b => s.ini<b[1] && b[0]<s.fin));
+        const o = opc.get(fijas[0].txt) || {...fijas[0], libres:0, conCambio:0};
+        if (ocupado) o.conCambio++; else o.libres++;
+        opc.set(fijas[0].txt, o);
+      }
+    }
+    // Límites por día de la asignatura
+    const c = L.bloque ? S.bloques[L.aid.slice(2)] : S.asignaturas[L.sid], base = L.bloque ? `bloques/${L.aid.slice(2)}` : `asignaturas/${L.sid}`;
+    if ((causas.maxdia||0) + (causas.maxdobles||0) + (causas.doble||0) >= 3){
+      if (causas.maxdobles) opc.set('dobles', {txt:`Permitir ${maxDobles(c)+1} días con horas juntas en ${c.nombre}`, u:{[`${ROOT}/${base}/maxDobles`]:maxDobles(c)+1}, libres:0, conCambio:causas.maxdobles});
+      if (causas.maxdia) opc.set('maxdia', {txt:`Subir a ${(+c.maxDia||1)+1} el máximo de horas por día de ${c.nombre}`, u:{[`${ROOT}/${base}/maxDia`]:(+c.maxDia||1)+1}, libres:0, conCambio:causas.maxdia});
+    }
+    // Saturación de maestros
+    const saturados = L.mids.map(mid => {
+      const m = S.maestros[mid], suyas = new Set(filas(turnosDe(m)).map(r => r.ini));
+      const disp = suyas.size*5 - Object.keys(m.bloqueos||{}).filter(k => suyas.has(+k.split('-')[1])).length;
+      return {m, disp, nec:horasMaestro(mid)+libresDe(m)};
+    }).filter(x => x.disp - x.nec <= 2);
+    const opciones = [...opc.values()].sort((a,b) => (b.libres*2+b.conCambio) - (a.libres*2+a.conCambio)).slice(0,6);
+    return {L, n, total, causas, opciones, saturados};
+  });
+}
+function renderAnalisis(best, totalSes, ronda, estancado){
+  const an = analizarPendientes(best.E, best.faltan);
+  analisisOpc = [];
+  const causaTxt = c => Object.entries(c).sort((a,b) => b[1]-a[1]).map(([k,v]) => `${v} ${({grupo:'ocupados por otras clases del grupo', choque:'el maestro ya da clase en otro grupo', bloqueo:'horas prohibidas del maestro', prohibida:'horas prohibidas del grupo', prohibidaAsig:'horas prohibidas de la asignatura', regla:'bloqueados por condicionantes', maxdia:'ya llegó al máximo por día', maxdobles:'ya usó sus días de horas juntas', doble:'deben ir seguidas', maxmaestro:'máximo diario del maestro', turno:'fuera del turno del maestro', bloqueTurno:'turnos distintos'})[k]||k}`).join(', ');
+  let h = `<div class="panel"><h3>Por qué faltan sesiones y cómo resolverlo</h3>
+    <p class="hint" style="margin:-6px 0 10px">Mejor resultado hasta ahora: <b>${totalSes-best.faltan.length} de ${totalSes}</b> sesiones (ronda ${ronda}). El horario no se guarda hasta que estén todas.</p>`;
+  if (estancado) h += `<div class="note warn">Llevas ${estancado} rondas con el mismo resultado. Probablemente no existe un horario que cumpla todas las reglas actuales: aplica una de las soluciones de abajo y vuelve a generar.</div>`;
+  an.forEach(x => {
+    h += `<div class="anl"><p><b>${esc(nomClase(x.L))}</b>: falta${x.n>1?'n':''} ${x.n} h.</p>
+      <p class="hint">De los ${x.total} módulos de la semana: ${esc(causaTxt(x.causas))}.</p>`;
+    if (x.opciones.length){
+      h += '<ul class="sol">' + x.opciones.map(o => { analisisOpc.push(o); const i = analisisOpc.length-1;
+        const efecto = o.libres ? `abre ${o.libres} lugar${o.libres>1?'es':''} libre${o.libres>1?'s':''}` : `abre ${o.conCambio} lugar${o.conCambio>1?'es':''} reacomodando otras clases`;
+        return `<li>${esc(o.txt)} <small class="hint">(${efecto})</small> <button type="button" class="btn sm" data-aplicar="${i}">Aplicar</button></li>`; }).join('') + '</ul>';
+    }
+    x.saturados.forEach(sx => { h += `<p class="hint">⚠ ${esc(sx.m.nombre)} está saturado: necesita ${sx.nec} módulos y tiene ${sx.disp} disponibles. Pasa uno de sus grupos a otro maestro, activa su otro turno o permítele más horas.</p>`; });
+    if (!x.opciones.length && !x.saturados.length) h += '<p class="hint">No la frena una regla fija: se atora con otras clases. El programa sigue probando intercambios; si no sale, libera horas del maestro o del grupo.</p>';
+    h += '</div>';
+  });
+  $('#gAnalisis').innerHTML = h + '</div>';
+}
 async function generarUna(lessons, tries, seed, etiqueta){
-  const total = lessons.length; let best = null;
-  const prog = (pct, txt) => { $('#gProg').innerHTML = `<p class="hint" style="margin:0"><b>${etiqueta}</b></p><div class="bar big"><i style="width:${pct}%"></i></div><p class="hint">${txt}</p>`; };
-  for (let t=0; t<tries; t++){
-    const res = intento(makeEngine(), lessons, 30000, mulberry32(seed + t*7919));
-    if (!best || res.faltan.length < best.faltan.length) best = res;
-    prog((t+1)/tries*100, `Intento ${t+1} de ${tries}: ${total-best.faltan.length} de ${total} sesiones colocadas.`);
-    await new Promise(r => setTimeout(r, 0));
-    if (!best.faltan.length) break;
+  const total = lessons.length, t0 = Date.now(); let best = null, ronda = 0, igual = 0, previo = null;
+  const prog = (pct, txt) => { const seg = Math.round((Date.now()-t0)/1000);
+    $('#gProg').innerHTML = `<p class="hint" style="margin:0"><b>${etiqueta}</b> · ronda ${ronda} · ${Math.floor(seg/60)}:${String(seg%60).padStart(2,'0')} min</p><div class="bar big"><i style="width:${pct}%"></i></div><p class="hint">${txt}</p>`; };
+  while (!detener){
+    ronda++;
+    let rb = null;
+    for (let t=0; t<tries && !detener; t++){
+      const res = intento(makeEngine(), lessons, 30000, mulberry32(seed + ronda*100003 + t*7919));
+      if (!rb || res.faltan.length < rb.faltan.length) rb = res;
+      const mejor = Math.min(rb.faltan.length, best ? best.faltan.length : Infinity);
+      prog((total-mejor)/total*100, `Probando acomodos: ${total-mejor} de ${total} sesiones colocadas.`);
+      await new Promise(r => setTimeout(r, 0));
+      if (!rb.faltan.length) break;
+    }
+    if (rb && rb.faltan.length && !detener)
+      rb = await busquedaLocal(rb.E, rb.faltan, mulberry32(seed + ronda*7), 200000*Math.min(ronda,5), (it,m) => prog((total-m)/total*100, `Reacomodando clases: ${total-m} de ${total} sesiones colocadas.`));
+    if (rb && (!best || rb.faltan.length < best.faltan.length)) best = rb;
+    if (!best || !best.faltan.length) break;
+    igual = previo === best.faltan.length ? igual+1 : 0; previo = best.faltan.length;
+    // Si se atora y el solucionador exacto ya encontró un horario completo, se usa ese
+    if (igual >= 2 && respaldoExacto){ const g = respaldoExacto; respaldoExacto = null; return g; }
+    renderAnalisis(best, total, ronda, igual >= 3 ? igual : 0);
   }
-  if (best.faltan.length){
-    best = await busquedaLocal(best.E, best.faltan, mulberry32(seed+1), 200000, (it,m) =>
-      prog(Math.min(100,it/2000), `Reacomodando clases: ${total-m} de ${total} sesiones colocadas.`));
-  }
+  if (!best || best.faltan.length) return {incompleto:true, best, total};
   const E = best.E, lib = asignarLibres(E), clases = {};
   for (const gid in E.grid) E.grid[gid].forEach((dia,d) => dia.forEach((aid,i) => { if (aid) (clases[gid] ??= {})[`${d}-${i+1}`] = aid; }));
-  const falt = {};
-  best.faltan.forEach(L => { (falt[L.aid] ??= {aid:L.aid, n:0, motivo:''}).n++; });
-  Object.values(falt).forEach(f => {
-    const L = lessonOf(f.aid), g = E.G[L.gids[0]], tally = {};
-    for (let d=0; d<5; d++) for (const s of g.slots){ const r = E.check(L,d,s); if (r && r!=='grupo') tally[r]=(tally[r]||0)+1; }
-    const top = Object.entries(tally).sort((a,b) => b[1]-a[1])[0];
-    f.motivo = top ? MOT[top[0]] : MOT.grupo;
-  });
-  const gen = {fecha:Date.now(), firma:firma(), total, colocadas:total-best.faltan.length,
-    clases, libres:lib.mapa, avisosLibres:lib.avisos, faltantes:Object.values(falt)};
+  const gen = {fecha:Date.now(), firma:firma(), total, colocadas:total, clases, libres:lib.mapa, avisosLibres:lib.avisos, faltantes:[]};
   gen.metricas = metricas(gen);
   return gen;
 }
 async function generar(){
   if (corriendo) return;
-  const d = diagnostico();
-  if (d.err.length && !confirm(`El diagnóstico tiene ${d.err.length} problema(s). El horario puede quedar incompleto. ¿Generar de todos modos?`)) return;
+  const bloq = diagnosticoDetallado().filter(x => x.nivel==='err' && !x.suave);
+  if (bloq.length){
+    renderDiag(); $('#diag').scrollIntoView({behavior:'smooth'});
+    return toast(`Hay ${bloq.length} problema(s) que hacen imposible acomodar todas las sesiones. Corrígelos primero: cada uno tiene su botón "¿Cómo?".`,'err');
+  }
   const lessons = [];
   for (const aid in S.asignaciones){ const L = lessonOf(aid); if (!L) continue; const h = horasDe(S.asignaciones[aid]); for (let i=0; i<h; i++) lessons.push({...L}); }
   for (const [bid,b] of bloquesDe()){ const L = lessonOf('B:'+bid); if (!L) continue; for (let i=0; i<(+b.horas||0); i++) lessons.push({...L}); }
   if (!lessons.length) return toast('No hay clases que acomodar. Registra la carga académica.','err');
-  corriendo = true; $('#gRun').disabled = true;
+  corriendo = true; detener = false; $('#gRun').hidden = true; $('#gStop').hidden = false; $('#gAnalisis').innerHTML = ''; $('#xRes').innerHTML = '';
+  // 1) Comprobación exacta: ¿existe al menos un horario completo?
+  respaldoExacto = null;
+  try {
+    $('#gProg').innerHTML = '<p class="hint">Comprobando con el solucionador exacto si existe un horario completo…</p>';
+    const m = construirModelo(false);
+    const r = m.imposible.length ? {Status:'Infeasible'} : await resolver(m.lp, {time_limit:60});
+    if (r.Status === 'Infeasible'){
+      const res = await analisisExacto(t => $('#gProg').innerHTML = `<p class="hint">${esc(t)}</p>`);
+      renderExacto(res); $('#gProg').innerHTML = '';
+      toast('Comprobado: con las reglas actuales no existe un horario completo. Abajo están la causa y el cambio que lo resuelve.','err');
+      $('#xRes').scrollIntoView({behavior:'smooth'});
+      corriendo = false; $('#gRun').hidden = false; $('#gStop').hidden = true; return;
+    }
+    if (r.Status === 'Optimal') respaldoExacto = genDesdeSolucion(m, r.cols);
+  } catch(e){ /* sin solucionador (por ejemplo, sin internet): sigue con el generador normal */ }
   const tries = Math.max(1, Math.min(200, +$('#gIntentos').value || 10));
   const nProp = Math.max(1, Math.min(3, +$('#gProps').value || 1));
   const seed = Date.now() % 1000003, props = {};
-  for (let k=1; k<=nProp; k++){
-    props['p'+k] = await generarUna(lessons, tries, seed + k*104729, nProp>1 ? `Propuesta ${k} de ${nProp}` : 'Generando horario');
-    props['p'+k].propuesta = 'p'+k;
+  let incompleto = null;
+  for (let k=1; k<=nProp && !detener; k++){
+    const r = await generarUna(lessons, tries, seed + k*104729, nProp>1 ? `Propuesta ${k} de ${nProp}` : 'Generando horario');
+    if (r.incompleto){ incompleto = r; break; }
+    r.propuesta = 'p'+k; props['p'+k] = r;
   }
-  // La mejor: la más completa y, después, con menos horas muertas de maestros
-  const mejor = Object.keys(props).sort((a,b) => (arr(props[a].faltantes).reduce((s,f)=>s+f.n,0) - arr(props[b].faltantes).reduce((s,f)=>s+f.n,0))
-    || (props[a].metricas.huecosMaestros - props[b].metricas.huecosMaestros) || (props[a].metricas.huecosGrupos - props[b].metricas.huecosGrupos))[0];
   $('#gProg').innerHTML = '';
-  try {
-    await db.ref(ROOT).update({propuestas:props, generado:clone(props[mejor])});
-    const n = Object.keys(props).length;
-    toast(n>1 ? `Se generaron ${n} propuestas. Quedó en uso la propuesta ${mejor.slice(1)}, la mejor evaluada.` : (props[mejor].faltantes?.length ? 'Horario generado con clases pendientes. Revisa el resultado.' : 'Horario generado completo.'));
-  } catch(e){ toast('No se pudo guardar el horario: '+e.message,'err'); }
-  corriendo = false; $('#gRun').disabled = false;
+  const n = Object.keys(props).length;
+  if (n){
+    const mejor = Object.keys(props).sort((a,b) => (props[a].metricas.huecosMaestros - props[b].metricas.huecosMaestros) || (props[a].metricas.huecosGrupos - props[b].metricas.huecosGrupos))[0];
+    try {
+      await db.ref(ROOT).update({propuestas:props, generado:clone(props[mejor])});
+      if (!incompleto) $('#gAnalisis').innerHTML = '';
+      toast(n>1 ? `Listo: ${n} propuestas completas. Quedó en uso la propuesta ${mejor.slice(1)}, la mejor evaluada.` : 'Horario completo: todas las sesiones quedaron acomodadas.');
+    } catch(e){ toast('No se pudo guardar el horario: '+e.message,'err'); }
+  }
+  if (incompleto){
+    if (incompleto.best) renderAnalisis(incompleto.best, incompleto.total, '—', 0);
+    toast(n ? `Se guardaron ${n} propuesta(s) completas; la siguiente se detuvo sin terminar.` : 'Se detuvo sin terminar: el horario no se guardó porque faltan sesiones. Revisa las soluciones sugeridas.','err');
+  }
+  corriendo = false; detener = false; $('#gRun').hidden = false; $('#gStop').hidden = true;
 }
 function usarPropuesta(k){
   const p = S.propuestas?.[k]; if (!p) return;
-  db.ref(`${ROOT}/generado`).set(clone(p)).then(() => toast(`Propuesta ${k.slice(1)} en uso.`));
+  db.ref(`${ROOT}/generado`).set(clone(p)).then(() => toast(`${k==='px' ? 'Propuesta exacta' : 'Propuesta '+k.slice(1)} en uso.`));
 }
 function renderResultado(){
   const g = S.generado, P = S.propuestas || {};
@@ -1814,12 +2179,12 @@ function renderResultado(){
     h += `<div class="panel"><h3>Propuestas generadas</h3><p class="hint" style="margin-top:-8px">Menos horas muertas significa horarios más compactos para los maestros. Revisa cada una en Vista previa antes de elegir.</p>
       <div class="wrap"><table class="list"><thead><tr><th>Propuesta</th><th>Sesiones colocadas</th><th>Horas muertas de maestros</th><th>Huecos en grupos</th><th></th></tr></thead><tbody>` +
       ks.map(k => { const p = P[k], enUso = g.propuesta===k;
-        return `<tr><td><b>Propuesta ${k.slice(1)}</b></td><td>${p.colocadas} de ${p.total}</td><td>${p.metricas?.huecosMaestros ?? '—'}</td><td>${p.metricas?.huecosGrupos ?? '—'}</td>
+        return `<tr><td><b>${k==='px' ? 'Propuesta exacta' : 'Propuesta '+k.slice(1)}</b></td><td>${p.colocadas} de ${p.total}</td><td>${p.metricas?.huecosMaestros ?? '—'}</td><td>${p.metricas?.huecosGrupos ?? '—'}</td>
           <td class="ra">${enUso ? '<span class="pill" style="background:var(--ok);color:#fff;border-color:var(--ok)">En uso</span>' : `<button class="btn sm" data-usar="${k}">Usar esta</button>`}</td></tr>`; }).join('') +
       '</tbody></table></div></div>';
   }
   const falt = arr(g.faltantes), av = arr(g.avisosLibres), completo = !falt.length;
-  h += `<div class="panel"><h3>${g.propuesta && ks.length>1 ? `Propuesta ${g.propuesta.slice(1)} (en uso)` : 'Último horario generado'}</h3><p class="hint" style="margin-top:-8px">${new Date(g.fecha).toLocaleString('es-MX',{dateStyle:'long',timeStyle:'short'})}</p>`;
+  h += `<div class="panel"><h3>${g.propuesta && ks.length>1 ? `${g.propuesta==='px' ? 'Propuesta exacta' : 'Propuesta '+g.propuesta.slice(1)} (en uso)` : 'Último horario generado'}</h3><p class="hint" style="margin-top:-8px">${new Date(g.fecha).toLocaleString('es-MX',{dateStyle:'long',timeStyle:'short'})}</p>`;
   if (g.firma !== firma()) h += '<div class="note warn">Cambiaste datos después de generar este horario. Genera de nuevo para que lo refleje.</div>';
   h += `<div class="note ${completo?'ok':'bad'}">${g.colocadas} de ${g.total} sesiones colocadas.${completo?' El horario está completo.':''}</div>`;
   if (falt.length){
@@ -2062,7 +2427,7 @@ function renderHorario(){
   if (!$('#hSel').value || ($('#hSel').value==='*' && !$('#hSel').dataset.elegido)) $('#hSel').value = items[1] ? items[1][0] : '*';
   const gen = S.generado, pks = Object.keys(S.propuestas||{}).sort();
   $('#hProp').hidden = pks.length < 2;
-  $('#hProp').innerHTML = pks.map(k => `<option value="${k}" ${gen?.propuesta===k?'selected':''}>Propuesta ${k.slice(1)}</option>`).join('');
+  $('#hProp').innerHTML = pks.map(k => `<option value="${k}" ${gen?.propuesta===k?'selected':''}>${k==='px' ? 'Propuesta exacta' : 'Propuesta '+k.slice(1)}</option>`).join('');
   $('#hStale').innerHTML = gen && gen.firma !== firma() ? '<div class="note warn">Cambiaste datos después de generar este horario. Genera de nuevo para que lo refleje.</div>' : '';
   const puedeAjustar = hModo==='grupo' && $('#hSel').value!=='*' && !!gen;
   $('#hAjusteW').hidden = !puedeAjustar;
@@ -2271,6 +2636,19 @@ $('#rGrid').onclick = e => {
 $('#rList').onclick = e => { const d = e.target.closest('[data-del]'); if (d) db.ref(`${ROOT}/reglas/${d.dataset.del}`).remove().then(() => toast('Condicionante quitada.')); };
 
 $('#gRun').onclick = generar;
+$('#xRun').onclick = correrExacto;
+$('#xStop').onclick = () => { detenerSolver(); $('#xProg').textContent = 'Detenido.'; };
+$('#xRes').addEventListener('click', e => {
+  const b = e.target.closest('[data-xaplicar]'); if (!b) return;
+  const o = exactoOpc[+b.dataset.xaplicar]; if (!o) return;
+  db.ref().update(o.u).then(() => { b.disabled = true; b.textContent = 'Aplicado'; toast('Cambio aplicado. Ya puedes generar el horario.'); });
+});
+$('#gStop').onclick = () => { detener = true; detenerSolver(); $('#gStop').textContent = 'Deteniendo…'; setTimeout(() => $('#gStop').textContent = 'Detener', 3000); };
+$('#gAnalisis').addEventListener('click', e => {
+  const b = e.target.closest('[data-aplicar]'); if (!b) return;
+  const o = analisisOpc[+b.dataset.aplicar]; if (!o) return;
+  db.ref().update(o.u).then(() => { b.disabled = true; b.textContent = 'Aplicado'; toast('Cambio aplicado. Vuelve a generar el horario.'); });
+});
 $('#diag').addEventListener('click', e => {
   if (e.target.id==='dRevisar') return revisarAFondo();
   const b = e.target.closest('[data-ir]'); if (b) irACorregir(diagItems[+b.dataset.ir]);
